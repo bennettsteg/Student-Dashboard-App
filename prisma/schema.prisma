@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Auth.js (NextAuth) standard models ---
+// Schema follows https://authjs.dev/getting-started/adapters/prisma exactly,
+// since @auth/prisma-adapter expects these exact fields/relations.
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts      Account[]
+  sessions      Session[]
+  courses       Course[]
+  calendarEvents CalendarEvent[]
+  notifications NotificationItem[]
+  scheduleClasses ScheduleClass[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- App models ---
+
+model Course {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  code        String?
+  color       String?
+  externalRef String? // e.g. Blackboard course identifier parsed from the ICS feed
+  createdAt   DateTime @default(now())
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events CalendarEvent[]
+
+  @@unique([userId, externalRef])
+  @@index([userId])
+}
+
+enum EventSource {
+  BLACKBOARD_ICS
+  MANUAL
+}
+
+enum EventStatus {
+  ACTIVE
+  CANCELLED
+}
+
+model CalendarEvent {
+  id           String      @id @default(cuid())
+  userId       String
+  courseId     String?
+  title        String
+  description  String?
+  location     String?
+  startAt      DateTime
+  endAt        DateTime
+  allDay       Boolean     @default(false)
+  source       EventSource
+  // iCal UID for BLACKBOARD_ICS events, null for MANUAL events.
+  externalUid  String?
+  // Dedup key for individual occurrences expanded from a recurring VEVENT.
+  recurrenceId String?
+  // Hash of the upstream VEVENT fields as last seen; used to skip no-op syncs.
+  lastSyncedHash String?
+  // Once true, sync must never overwrite this row's content fields again.
+  userModified Boolean     @default(false)
+  status       EventStatus @default(ACTIVE)
+  isAssignment Boolean     @default(false)
+  dueAt        DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, source, externalUid, recurrenceId])
+  @@index([userId, startAt])
+  @@index([courseId, isAssignment, dueAt])
+}
+
+// Recurring weekly class meeting for the semester schedule grid (Monday-Friday).
+// Not tied to CalendarEvent: it's a standing weekly pattern, not a set of dated occurrences.
+model ScheduleClass {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  location   String?
+  // ISO weekday numbers restricted to weekdays: 1=Monday ... 5=Friday.
+  daysOfWeek Int[]
+  // Local wall-clock time-of-day, stored as "HH:mm" (no timezone/date component).
+  startTime  String
+  endTime    String
+  color      String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum NotificationSource {
+  EMAIL
+  TEAMS_CHAT
+  TEAMS_CHANNEL
+}
+
+model NotificationItem {
+  id          String             @id @default(cuid())
+  userId      String
+  source      NotificationSource
+  // Graph message id.
+  externalId  String
+  // conversationId/chatId, for grouping/threading.
+  threadId    String?
+  subject     String?
+  preview     String?
+  fromName    String?
+  fromAddress String?
+  receivedAt  DateTime
+  isRead      Boolean            @default(false)
+  raw         Json?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, externalId])
+  @@index([userId, isRead])
+}
