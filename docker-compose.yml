@@ -6,7 +6,7 @@ services:
       target: builder
     command: ["npx", "prisma", "migrate", "deploy"]
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-dashboard}:${POSTGRES_PASSWORD:-dashboard}@postgres:5432/${POSTGRES_DB:-student_dashboard}
+      DATABASE_URL: ${DATABASE_URL}
     networks:
       - database-network
 
@@ -19,7 +19,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-dashboard}:${POSTGRES_PASSWORD:-dashboard}@postgres:5432/${POSTGRES_DB:-student_dashboard}
+      DATABASE_URL: ${DATABASE_URL}
       AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
       AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
       AUTH_SECRET: ${AUTH_SECRET}
@@ -39,7 +39,7 @@ services:
     command: ["npx", "tsx", "worker/index.ts"]
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-dashboard}:${POSTGRES_PASSWORD:-dashboard}@postgres:5432/${POSTGRES_DB:-student_dashboard}
+      DATABASE_URL: ${DATABASE_URL}
       BLACKBOARD_ICS_URL: ${BLACKBOARD_ICS_URL}
       SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-120}
     networks:
