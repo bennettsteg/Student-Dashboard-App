@@ -52,7 +52,6 @@ export async function createCourse(input: CourseInput) {
 
   revalidatePath("/schedule");
   revalidatePath("/assignments");
-  revalidatePath("/calendar");
   revalidatePath("/");
 }
 
@@ -73,7 +72,6 @@ export async function updateCourse(id: string, input: CourseInput) {
 
   revalidatePath("/schedule");
   revalidatePath("/assignments");
-  revalidatePath("/calendar");
   revalidatePath("/");
 }
 
@@ -99,6 +97,5 @@ export async function deleteCourses(ids: string[]) {
 
   revalidatePath("/schedule");
   revalidatePath("/assignments");
-  revalidatePath("/calendar");
   revalidatePath("/");
 }

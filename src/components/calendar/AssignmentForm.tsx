@@ -22,7 +22,11 @@ import {
 import { TimeInput } from "@/components/ui/time-input";
 import { createEvent, deleteEvent, updateEvent } from "@/server-actions/calendar-actions";
 
-import type { CourseOption } from "@/components/calendar/EventForm";
+export interface CourseOption {
+  id: string;
+  name: string;
+  color: string | null;
+}
 
 export interface AssignmentFormValues {
   id?: string;

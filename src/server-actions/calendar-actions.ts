@@ -44,7 +44,6 @@ export async function createEvent(input: CalendarEventInput) {
     },
   });
 
-  revalidatePath("/calendar");
   revalidatePath("/");
 }
 
@@ -67,23 +66,6 @@ export async function updateEvent(id: string, input: CalendarEventInput) {
     },
   });
 
-  revalidatePath("/calendar");
-  revalidatePath("/");
-}
-
-export async function moveEvent(id: string, start: string, end: string) {
-  const userId = await requireUserId();
-
-  await prisma.calendarEvent.updateMany({
-    where: { id, userId },
-    data: {
-      startAt: new Date(start),
-      endAt: new Date(end),
-      userModified: true,
-    },
-  });
-
-  revalidatePath("/calendar");
   revalidatePath("/");
 }
 
@@ -94,6 +76,5 @@ export async function deleteEvent(id: string) {
     where: { id, userId },
   });
 
-  revalidatePath("/calendar");
   revalidatePath("/");
 }

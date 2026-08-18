@@ -18,7 +18,6 @@ export async function triggerBlackboardSync(): Promise<SyncResult> {
 
   const result = await syncBlackboardCalendarForUser(userId, icsUrl);
 
-  revalidatePath("/calendar");
   revalidatePath("/schedule");
   revalidatePath("/");
 

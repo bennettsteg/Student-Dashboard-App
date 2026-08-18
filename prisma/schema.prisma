@@ -26,6 +26,7 @@ model User {
   courses       Course[]
   calendarEvents CalendarEvent[]
   notifications NotificationItem[]
+  links         Link[]
 }
 
 model Account {
@@ -134,6 +135,20 @@ model CalendarEvent {
   @@unique([userId, source, externalUid, recurrenceId])
   @@index([userId, startAt])
   @@index([courseId, isAssignment, dueAt])
+}
+
+// A user-added shortcut to an external site (school portal, course tools, etc.),
+// shown as a clickable tile on the Links tab.
+model Link {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 enum NotificationSource {
