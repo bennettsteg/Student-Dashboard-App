@@ -2,18 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { setMailReadState } from "@/lib/graph/mail";
 import { getValidAccessToken } from "@/lib/graph/token";
 import { syncMailNotifications, type MailSyncResult } from "@/lib/graph/syncNotifications";
+import { resolveUserId } from "@/lib/session";
 
 async function requireUserId() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await resolveUserId();
+  if (!userId) {
     throw new Error("Not authenticated");
   }
-  return session.user.id;
+  return userId;
 }
 
 export async function refreshNotifications(): Promise<MailSyncResult> {

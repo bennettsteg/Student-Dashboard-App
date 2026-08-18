@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BookOpen, Calendar, Clock, LayoutDashboard, Settings } from "lucide-react";
+import { Bell, Calendar, ClipboardList, Clock, LayoutDashboard, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/schedule", label: "Schedule", icon: Clock },
+  { href: "/assignments", label: "Assignments", icon: ClipboardList },
   { href: "/notifications", label: "Mail", icon: Bell },
-  { href: "/courses", label: "Courses", icon: BookOpen },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -25,12 +25,12 @@ export function MobileNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${
+            className={`flex flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-[11px] leading-none ${
               active ? "text-primary" : "text-muted-foreground"
             }`}
           >
             <Icon className="h-5 w-5" />
-            {item.label}
+            <span className="w-full truncate text-center">{item.label}</span>
           </Link>
         );
       })}

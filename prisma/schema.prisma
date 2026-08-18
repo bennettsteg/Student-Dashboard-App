@@ -26,7 +26,6 @@ model User {
   courses       Course[]
   calendarEvents CalendarEvent[]
   notifications NotificationItem[]
-  scheduleClasses ScheduleClass[]
 }
 
 model Account {
@@ -67,19 +66,26 @@ model VerificationToken {
 
 // --- App models ---
 
+// A manually-created course, combined with its weekly schedule meeting time.
+// This is the only way a Course comes into existence — Blackboard sync never
+// creates or links one (see CalendarEvent.sourceCourseName).
 model Course {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  code        String?
-  color       String?
-  externalRef String? // e.g. Blackboard course identifier parsed from the ICS feed
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  code       String?
+  color      String?
+  location   String?
+  // ISO weekday numbers restricted to weekdays: 1=Monday ... 5=Friday.
+  daysOfWeek Int[]
+  // Local wall-clock time-of-day, stored as "HH:mm" (no timezone/date component).
+  startTime  String
+  endTime    String
+  createdAt  DateTime @default(now())
 
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   events CalendarEvent[]
 
-  @@unique([userId, externalRef])
   @@index([userId])
 }
 
@@ -104,6 +110,10 @@ model CalendarEvent {
   endAt        DateTime
   allDay       Boolean     @default(false)
   source       EventSource
+  // Course name as parsed from the Blackboard ICS feed ("Course: Title" prefix).
+  // Reference-only display text for BLACKBOARD_ICS events — never linked to a
+  // real Course row, since Blackboard sync must never create/match courses.
+  sourceCourseName String?
   // iCal UID for BLACKBOARD_ICS events, null for MANUAL events.
   externalUid  String?
   // Dedup key for individual occurrences expanded from a recurring VEVENT.
@@ -124,26 +134,6 @@ model CalendarEvent {
   @@unique([userId, source, externalUid, recurrenceId])
   @@index([userId, startAt])
   @@index([courseId, isAssignment, dueAt])
-}
-
-// Recurring weekly class meeting for the semester schedule grid (Monday-Friday).
-// Not tied to CalendarEvent: it's a standing weekly pattern, not a set of dated occurrences.
-model ScheduleClass {
-  id         String   @id @default(cuid())
-  userId     String
-  name       String
-  location   String?
-  // ISO weekday numbers restricted to weekdays: 1=Monday ... 5=Friday.
-  daysOfWeek Int[]
-  // Local wall-clock time-of-day, stored as "HH:mm" (no timezone/date component).
-  startTime  String
-  endTime    String
-  color      String?
-  createdAt  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 enum NotificationSource {

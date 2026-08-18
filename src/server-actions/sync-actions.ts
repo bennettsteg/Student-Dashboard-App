@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/lib/auth";
 import { syncBlackboardCalendarForUser, type SyncResult } from "@/lib/ical/sync";
+import { resolveUserId } from "@/lib/session";
 
 export async function triggerBlackboardSync(): Promise<SyncResult> {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await resolveUserId();
+  if (!userId) {
     throw new Error("Not authenticated");
   }
 
@@ -16,10 +16,10 @@ export async function triggerBlackboardSync(): Promise<SyncResult> {
     throw new Error("BLACKBOARD_ICS_URL is not configured");
   }
 
-  const result = await syncBlackboardCalendarForUser(session.user.id, icsUrl);
+  const result = await syncBlackboardCalendarForUser(userId, icsUrl);
 
   revalidatePath("/calendar");
-  revalidatePath("/courses");
+  revalidatePath("/schedule");
   revalidatePath("/");
 
   return result;

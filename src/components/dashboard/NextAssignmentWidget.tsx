@@ -4,14 +4,14 @@ import type { NextAssignmentDTO } from "@/lib/calendar/queries";
 
 export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) {
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">Next due per class</h2>
-        <Link href="/calendar" className="text-sm text-muted-foreground hover:underline">
-          Calendar
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5">
+        <h2 className="text-lg font-semibold">Next due per class</h2>
+        <Link href="/assignments" className="text-sm text-muted-foreground hover:underline">
+          Assignments
         </Link>
       </div>
-      <ul className="mt-3 space-y-2">
+      <ul className="flex flex-1 flex-col gap-2 rounded-xl border border-border bg-card p-4">
         {items.length === 0 && (
           <li className="text-sm text-muted-foreground">Nothing due — you&apos;re all caught up.</li>
         )}

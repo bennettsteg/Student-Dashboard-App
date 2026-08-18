@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createScheduleClass } from "@/server-actions/schedule-actions";
+import { TimeInput } from "@/components/ui/time-input";
+import { createCourse } from "@/server-actions/course-actions";
 
 const DAYS = [
   { value: 1, label: "Mon" },
@@ -16,8 +17,9 @@ const DAYS = [
   { value: 5, label: "Fri" },
 ];
 
-export function AddClassForm() {
+export function CourseForm() {
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [location, setLocation] = useState("");
   const [days, setDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("09:00");
@@ -35,7 +37,7 @@ export function AddClassForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || days.length === 0) {
-      setError("Enter a class name and pick at least one day.");
+      setError("Enter a course name and pick at least one day.");
       return;
     }
     if (endTime <= startTime) {
@@ -45,14 +47,16 @@ export function AddClassForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await createScheduleClass({
+      await createCourse({
         name,
+        code: code || null,
         location: location || null,
         daysOfWeek: days,
         startTime,
         endTime,
       });
       setName("");
+      setCode("");
       setLocation("");
       setDays([]);
       setStartTime("09:00");
@@ -71,9 +75,9 @@ export function AddClassForm() {
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="class-name">Class name</Label>
+          <Label htmlFor="course-name">Course name</Label>
           <Input
-            id="class-name"
+            id="course-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Intro to Algorithms"
@@ -81,36 +85,33 @@ export function AddClassForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="class-location">Location</Label>
+          <Label htmlFor="course-code">Code (optional)</Label>
           <Input
-            id="class-location"
+            id="course-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="e.g. CS 201"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="course-location">Location</Label>
+          <Input
+            id="course-location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. Ferguson 201"
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="class-start">Start time</Label>
-          <Input
-            id="class-start"
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            required
-          />
+          <Label htmlFor="course-start-hours">Start time</Label>
+          <TimeInput id="course-start" value={startTime} onChange={setStartTime} required />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="class-end">End time</Label>
-          <Input
-            id="class-end"
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            required
-          />
+          <Label htmlFor="course-end-hours">End time</Label>
+          <TimeInput id="course-end" value={endTime} onChange={setEndTime} required />
         </div>
         <Button type="submit" disabled={submitting}>
-          Add class
+          Add course
         </Button>
       </div>
 

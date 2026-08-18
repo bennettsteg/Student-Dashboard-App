@@ -58,13 +58,17 @@ describe("syncBlackboardCalendarForUser", () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  it("creates events on first sync, auto-creating the course", async () => {
+  it("creates events on first sync, storing the course name as reference only (no Course row)", async () => {
     const result = await syncBlackboardCalendarForUser(userId, url);
     expect(result.created).toBe(2);
 
     const rows = await prisma.calendarEvent.findMany({ where: { userId }, include: { course: true } });
     expect(rows).toHaveLength(2);
-    expect(rows.every((r) => r.course?.name === "CS 201")).toBe(true);
+    expect(rows.every((r) => r.sourceCourseName === "CS 201")).toBe(true);
+    expect(rows.every((r) => r.courseId === null)).toBe(true);
+
+    const courses = await prisma.course.findMany({ where: { userId } });
+    expect(courses).toHaveLength(0);
   });
 
   it("is idempotent on an unchanged resync", async () => {

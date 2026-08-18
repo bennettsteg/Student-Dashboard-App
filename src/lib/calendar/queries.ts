@@ -9,12 +9,17 @@ export interface NextAssignmentDTO {
   dueAt: Date;
 }
 
-/** Earliest upcoming assignment per course, for the dashboard's "what's due next" widget. */
+/**
+ * Earliest upcoming assignment per course, for the dashboard's "what's due next" widget.
+ * Only considers manually-added assignments (source: MANUAL) tied to a manually-created
+ * course — Blackboard-derived events are reference-only and never appear here.
+ */
 export async function nextAssignmentPerCourse(userId: string): Promise<NextAssignmentDTO[]> {
   const events = await prisma.calendarEvent.findMany({
     where: {
       userId,
       isAssignment: true,
+      source: "MANUAL",
       status: "ACTIVE",
       dueAt: { gte: new Date() },
     },

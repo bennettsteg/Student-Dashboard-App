@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TimeInput } from "@/components/ui/time-input";
 import { createEvent, deleteEvent, updateEvent } from "@/server-actions/calendar-actions";
 
 import type { CourseOption } from "@/components/calendar/EventForm";
@@ -37,6 +38,8 @@ interface AssignmentFormProps {
   courses: CourseOption[];
   initialValues: AssignmentFormValues;
   onSaved: () => void;
+  /** When set, the assignment is always saved under this course — the course picker is hidden. */
+  lockedCourseId?: string;
 }
 
 const NO_COURSE = "none";
@@ -48,6 +51,7 @@ export function AssignmentForm({
   courses,
   initialValues,
   onSaved,
+  lockedCourseId,
 }: AssignmentFormProps) {
   const [values, setValues] = useState(initialValues);
   const [submitting, setSubmitting] = useState(false);
@@ -75,7 +79,7 @@ export function AssignmentForm({
         start: dueAt,
         end: end.toISOString(),
         allDay: false,
-        courseId: values.courseId === NO_COURSE ? null : values.courseId,
+        courseId: lockedCourseId ?? (values.courseId === NO_COURSE ? null : values.courseId),
         isAssignment: true,
         dueAt,
       };
@@ -120,27 +124,29 @@ export function AssignmentForm({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="assignment-course">Course</Label>
-            <Select
-              value={values.courseId || NO_COURSE}
-              onValueChange={(courseId) =>
-                setValues({ ...values, courseId: courseId ?? NO_COURSE })
-              }
-            >
-              <SelectTrigger id="assignment-course" className="w-full">
-                <SelectValue placeholder="No course" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_COURSE}>No course</SelectItem>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!lockedCourseId && (
+            <div className="space-y-1.5">
+              <Label htmlFor="assignment-course">Course</Label>
+              <Select
+                value={values.courseId || NO_COURSE}
+                onValueChange={(courseId) =>
+                  setValues({ ...values, courseId: courseId ?? NO_COURSE })
+                }
+              >
+                <SelectTrigger id="assignment-course" className="w-full">
+                  <SelectValue placeholder="No course" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_COURSE}>No course</SelectItem>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -154,13 +160,12 @@ export function AssignmentForm({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="assignment-time">Time</Label>
-              <Input
+              <Label htmlFor="assignment-time-hours">Time</Label>
+              <TimeInput
                 id="assignment-time"
-                type="time"
                 required
                 value={values.time}
-                onChange={(e) => setValues({ ...values, time: e.target.value })}
+                onChange={(time) => setValues({ ...values, time })}
               />
             </div>
           </div>

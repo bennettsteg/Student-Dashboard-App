@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
 import { syncBlackboardCalendarForUser } from "@/lib/ical/sync";
+import { resolveUserId } from "@/lib/session";
 
 export async function POST() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await resolveUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -14,6 +14,6 @@ export async function POST() {
     return NextResponse.json({ error: "BLACKBOARD_ICS_URL is not configured" }, { status: 400 });
   }
 
-  const result = await syncBlackboardCalendarForUser(session.user.id, icsUrl);
+  const result = await syncBlackboardCalendarForUser(userId, icsUrl);
   return NextResponse.json(result);
 }

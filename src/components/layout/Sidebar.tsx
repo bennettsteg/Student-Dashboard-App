@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BookOpen, Calendar, Clock, LayoutDashboard, Settings } from "lucide-react";
+import { Bell, Calendar, ClipboardList, Clock, LayoutDashboard, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/schedule", label: "Schedule", icon: Clock },
+  { href: "/schedule", label: "Courses & Schedule", icon: Clock },
+  { href: "/assignments", label: "Assignments", icon: ClipboardList },
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/courses", label: "Courses", icon: BookOpen },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

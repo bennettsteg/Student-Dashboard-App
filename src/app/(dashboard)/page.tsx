@@ -7,12 +7,29 @@ import type { MiniCalendarEvent } from "@/components/dashboard/MiniCalendarWidge
 
 import { MiniCalendarWidgetClient } from "./MiniCalendarWidgetClient";
 
+function toCalendarEvents(
+  events: { id: string; title: string; startAt: Date; endAt: Date; allDay: boolean; course: { color: string | null } | null }[],
+): MiniCalendarEvent[] {
+  return events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    start: event.startAt.toISOString(),
+    end: event.endAt.toISOString(),
+    allDay: event.allDay,
+    courseColor: event.course?.color ?? null,
+  }));
+}
+
 export default async function DashboardPage() {
   const userId = await requireUserId();
 
-  const [events, unreadCount, recentMail, nextAssignments] = await Promise.all([
+  const [classEvents, blackboardEvents, unreadCount, recentMail, nextAssignments] = await Promise.all([
     prisma.calendarEvent.findMany({
-      where: { userId, status: "ACTIVE" },
+      where: { userId, status: "ACTIVE", source: "MANUAL" },
+      include: { course: true },
+    }),
+    prisma.calendarEvent.findMany({
+      where: { userId, status: "ACTIVE", source: "BLACKBOARD_ICS" },
       include: { course: true },
     }),
     prisma.notificationItem.count({ where: { userId, source: "EMAIL", isRead: false } }),
@@ -24,17 +41,14 @@ export default async function DashboardPage() {
     nextAssignmentPerCourse(userId),
   ]);
 
-  const calendarEvents: MiniCalendarEvent[] = events.map((event) => ({
-    id: event.id,
-    title: event.title,
-    start: event.startAt.toISOString(),
-    end: event.endAt.toISOString(),
-    allDay: event.allDay,
-    courseColor: event.course?.color ?? null,
-  }));
-
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <MiniCalendarWidgetClient title="Class Calendar" events={toCalendarEvents(classEvents)} />
+      <NextAssignmentWidget items={nextAssignments} />
+      <MiniCalendarWidgetClient
+        title="Blackboard Calendar"
+        events={toCalendarEvents(blackboardEvents)}
+      />
       <NotificationWidget
         unreadCount={unreadCount}
         items={recentMail.map((m) => ({
@@ -45,8 +59,6 @@ export default async function DashboardPage() {
           receivedAt: m.receivedAt.toISOString(),
         }))}
       />
-      <MiniCalendarWidgetClient events={calendarEvents} />
-      <NextAssignmentWidget items={nextAssignments} />
     </div>
   );
 }

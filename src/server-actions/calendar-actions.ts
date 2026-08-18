@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { resolveUserId } from "@/lib/session";
 
 export interface CalendarEventInput {
   title: string;
@@ -18,11 +18,11 @@ export interface CalendarEventInput {
 }
 
 async function requireUserId() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await resolveUserId();
+  if (!userId) {
     throw new Error("Not authenticated");
   }
-  return session.user.id;
+  return userId;
 }
 
 export async function createEvent(input: CalendarEventInput) {

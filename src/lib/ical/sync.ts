@@ -10,6 +10,7 @@ const SYNC_WINDOW_MONTHS_FUTURE = 12;
 function contentHash(event: NormalizedEvent): string {
   const payload = JSON.stringify({
     title: event.title,
+    courseName: event.courseName,
     description: event.description,
     location: event.location,
     start: event.start.toISOString(),
@@ -19,23 +20,6 @@ function contentHash(event: NormalizedEvent): string {
     dueAt: event.dueAt?.toISOString() ?? null,
   });
   return createHash("sha256").update(payload).digest("hex");
-}
-
-async function resolveCourseId(
-  userId: string,
-  courseName: string | null,
-  cache: Map<string, string | null>,
-): Promise<string | null> {
-  if (!courseName) return null;
-  if (cache.has(courseName)) return cache.get(courseName)!;
-
-  const course = await prisma.course.upsert({
-    where: { userId_externalRef: { userId, externalRef: courseName } },
-    update: {},
-    create: { userId, name: courseName, externalRef: courseName },
-  });
-  cache.set(courseName, course.id);
-  return course.id;
 }
 
 export interface SyncResult {
@@ -59,7 +43,6 @@ export async function syncBlackboardCalendarForUser(
   to.setMonth(to.getMonth() + SYNC_WINDOW_MONTHS_FUTURE);
 
   const normalizedEvents = parseIcsFeed(feed, { from, to });
-  const courseIdCache = new Map<string, string | null>();
 
   const existingRows = await prisma.calendarEvent.findMany({
     where: { userId, source: "BLACKBOARD_ICS", status: "ACTIVE" },
@@ -76,15 +59,14 @@ export async function syncBlackboardCalendarForUser(
     const key = `${event.uid}|${event.recurrenceId}`;
     seenKeys.add(key);
     const existing = existingByKey.get(key);
-    const courseId = await resolveCourseId(userId, event.courseName, courseIdCache);
     const hash = contentHash(event);
 
     if (!existing) {
       await prisma.calendarEvent.create({
         data: {
           userId,
-          courseId,
           title: event.title,
+          sourceCourseName: event.courseName,
           description: event.description,
           location: event.location,
           startAt: event.start,
@@ -115,8 +97,8 @@ export async function syncBlackboardCalendarForUser(
     await prisma.calendarEvent.update({
       where: { id: existing.id },
       data: {
-        courseId,
         title: event.title,
+        sourceCourseName: event.courseName,
         description: event.description,
         location: event.location,
         startAt: event.start,

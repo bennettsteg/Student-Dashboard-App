@@ -1,3 +1,4 @@
+import { signIn } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { getValidAccessToken } from "@/lib/graph/token";
@@ -9,7 +10,7 @@ async function getMicrosoftConnectionStatus(userId: string) {
     where: { userId, provider: "microsoft-entra-id" },
   });
   if (!account) {
-    return { connected: false, detail: "No Microsoft account linked. Sign out and sign in again." };
+    return { connected: false, detail: "No Microsoft account linked yet." };
   }
 
   try {
@@ -42,6 +43,19 @@ export default async function SettingsPage() {
           {connection.connected ? "Connected" : "Not connected"}
         </p>
         <p className="text-sm text-muted-foreground">{connection.detail}</p>
+        <form
+          action={async () => {
+            "use server";
+            await signIn("microsoft-entra-id", { redirectTo: "/settings" });
+          }}
+        >
+          <button
+            type="submit"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
+          >
+            {connection.connected ? "Reconnect Microsoft account" : "Connect Microsoft account"}
+          </button>
+        </form>
       </div>
 
       <div className="max-w-md space-y-2 rounded-xl border border-border bg-card p-4">

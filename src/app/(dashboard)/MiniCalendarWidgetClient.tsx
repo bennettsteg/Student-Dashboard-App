@@ -9,6 +9,12 @@ const MiniCalendarWidget = dynamic(
   { ssr: false },
 );
 
-export function MiniCalendarWidgetClient({ events }: { events: MiniCalendarEvent[] }) {
-  return <MiniCalendarWidget events={events} />;
+export function MiniCalendarWidgetClient({
+  title,
+  events,
+}: {
+  title: string;
+  events: MiniCalendarEvent[];
+}) {
+  return <MiniCalendarWidget title={title} events={events} />;
 }

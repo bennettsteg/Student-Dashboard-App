@@ -16,9 +16,9 @@ export function NotificationWidget({
   items: NotificationWidgetItem[];
 }) {
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5">
+        <h2 className="text-lg font-semibold">
           Mail{" "}
           {unreadCount > 0 && (
             <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
@@ -30,7 +30,7 @@ export function NotificationWidget({
           View all
         </Link>
       </div>
-      <ul className="mt-3 space-y-2">
+      <ul className="flex flex-1 flex-col gap-2 rounded-xl border border-border bg-card p-4">
         {items.length === 0 && (
           <li className="text-sm text-muted-foreground">No mail synced yet.</li>
         )}
