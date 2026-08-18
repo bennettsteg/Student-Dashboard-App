@@ -43,12 +43,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <MiniCalendarWidgetClient title="Class Calendar" events={toCalendarEvents(classEvents)} />
       <NextAssignmentWidget items={nextAssignments} />
-      <MiniCalendarWidgetClient
-        title="Blackboard Calendar"
-        events={toCalendarEvents(blackboardEvents)}
-      />
+      <MiniCalendarWidgetClient title="Class Calendar" events={toCalendarEvents(classEvents)} />
       <NotificationWidget
         unreadCount={unreadCount}
         items={recentMail.map((m) => ({
@@ -58,6 +54,10 @@ export default async function DashboardPage() {
           fromAddress: m.fromAddress,
           receivedAt: m.receivedAt.toISOString(),
         }))}
+      />
+      <MiniCalendarWidgetClient
+        title="Blackboard Calendar"
+        events={toCalendarEvents(blackboardEvents)}
       />
     </div>
   );

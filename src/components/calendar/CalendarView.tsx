@@ -64,9 +64,10 @@ export function CalendarView({
   const [assignmentFormOpen, setAssignmentFormOpen] = useState(false);
   const [assignmentFormValues, setAssignmentFormValues] =
     useState<AssignmentFormValues>(emptyAssignmentForm);
-  const [initialView] = useState(() =>
-    typeof window !== "undefined" && window.innerWidth < 768 ? "listWeek" : "dayGridMonth",
+  const [isMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768,
   );
+  const initialView = isMobile ? "listWeek" : "dayGridMonth";
 
   const fcEvents = useMemo(
     () =>
@@ -160,11 +161,11 @@ export function CalendarView({
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
         initialView={initialView}
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,listWeek",
-        }}
+        headerToolbar={
+          isMobile
+            ? { left: "prev,next", center: "title", right: "" }
+            : { left: "prev,next today", center: "title", right: "dayGridMonth,timeGridWeek,listWeek" }
+        }
         height="auto"
         selectable
         editable
