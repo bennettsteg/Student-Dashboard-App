@@ -78,6 +78,11 @@ export async function updateCourse(id: string, input: CourseInput) {
 }
 
 export async function deleteCourse(id: string) {
+  await deleteCourses([id]);
+}
+
+export async function deleteCourses(ids: string[]) {
+  if (ids.length === 0) return;
   const userId = await requireUserId();
 
   // Assignments only exist as a concept tied to a manually-created course (see
@@ -87,9 +92,9 @@ export async function deleteCourse(id: string) {
   // link (CalendarEvent.courseId is onDelete: SetNull).
   await prisma.$transaction([
     prisma.calendarEvent.deleteMany({
-      where: { userId, courseId: id, isAssignment: true, source: "MANUAL" },
+      where: { userId, courseId: { in: ids }, isAssignment: true, source: "MANUAL" },
     }),
-    prisma.course.deleteMany({ where: { id, userId } }),
+    prisma.course.deleteMany({ where: { id: { in: ids }, userId } }),
   ]);
 
   revalidatePath("/schedule");

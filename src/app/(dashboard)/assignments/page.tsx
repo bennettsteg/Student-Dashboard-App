@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 
+import { AssignmentsCourseList } from "./AssignmentsCourseList";
+
 export default async function AssignmentsPage() {
   const userId = await requireUserId();
 
@@ -30,28 +32,15 @@ export default async function AssignmentsPage() {
           page before adding assignments.
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-          {courses.map((course) => (
-            <li key={course.id}>
-              <Link
-                href={`/assignments/${course.id}`}
-                className="flex items-center justify-between gap-2 p-4 text-sm hover:bg-accent"
-              >
-                <span className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: course.color ?? "#a0a2a8" }}
-                  />
-                  <span className="font-medium">{course.name}</span>
-                  {course.code && <span className="text-muted-foreground">({course.code})</span>}
-                </span>
-                <span className="text-muted-foreground">
-                  {course._count.events} assignment{course._count.events === 1 ? "" : "s"}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <AssignmentsCourseList
+          courses={courses.map((course) => ({
+            id: course.id,
+            name: course.name,
+            code: course.code,
+            color: course.color,
+            assignmentCount: course._count.events,
+          }))}
+        />
       )}
     </div>
   );
