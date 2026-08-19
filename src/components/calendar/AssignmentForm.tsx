@@ -74,8 +74,16 @@ export function AssignmentForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      const dueAt = `${values.day}T${values.time}`;
-      const end = new Date(new Date(dueAt).getTime() + DUE_DURATION_MS);
+      // Resolve the wall-clock day/time to an absolute instant here, in the
+      // browser's own timezone, before it crosses to the server — a naive
+      // "YYYY-MM-DDTHH:mm" string would otherwise be re-interpreted using the
+      // server's local timezone (which may differ, e.g. a UTC Docker host),
+      // shifting the stored time.
+      const [year, month, day] = values.day.split("-").map(Number);
+      const [hours, minutes] = values.time.split(":").map(Number);
+      const due = new Date(year, month - 1, day, hours, minutes);
+      const end = new Date(due.getTime() + DUE_DURATION_MS);
+      const dueAt = due.toISOString();
       const input = {
         title: values.title,
         description: null,

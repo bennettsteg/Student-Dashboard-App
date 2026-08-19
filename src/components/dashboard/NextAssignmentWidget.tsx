@@ -1,8 +1,36 @@
+"use client";
+
 import Link from "next/link";
 
 import type { NextAssignmentDTO } from "@/lib/calendar/queries";
 
+function dayKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+/** Keeps, per course, only the items due on that course's earliest upcoming due day. */
+function nextDueDayItems(items: NextAssignmentDTO[]): NextAssignmentDTO[] {
+  const earliestDayByCourse = new Map<string, string>();
+  const result: NextAssignmentDTO[] = [];
+  for (const item of items) {
+    const key = item.courseId ?? "__none__";
+    const itemDayKey = dayKey(new Date(item.dueAt));
+
+    const earliestDayKey = earliestDayByCourse.get(key);
+    if (earliestDayKey === undefined) {
+      earliestDayByCourse.set(key, itemDayKey);
+    } else if (earliestDayKey !== itemDayKey) {
+      continue;
+    }
+
+    result.push(item);
+  }
+  return result;
+}
+
 export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) {
+  const visible = nextDueDayItems(items);
+
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5">
@@ -12,10 +40,10 @@ export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) 
         </Link>
       </div>
       <ul className="flex flex-1 flex-col gap-2 rounded-xl border border-border bg-card p-4">
-        {items.length === 0 && (
+        {visible.length === 0 && (
           <li className="text-sm text-muted-foreground">Nothing due — you&apos;re all caught up.</li>
         )}
-        {items.map((item) => (
+        {visible.map((item) => (
           <li key={item.eventId} className="flex items-center gap-2 text-sm">
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -26,7 +54,7 @@ export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) 
               <span className="text-muted-foreground"> — {item.title}</span>
             </span>
             <span className="shrink-0 text-muted-foreground">
-              {item.dueAt.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              {new Date(item.dueAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
           </li>
         ))}

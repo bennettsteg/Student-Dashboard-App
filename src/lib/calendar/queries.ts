@@ -6,15 +6,18 @@ export interface NextAssignmentDTO {
   courseColor: string | null;
   eventId: string;
   title: string;
-  dueAt: Date;
+  dueAt: string; // ISO
 }
 
 /**
- * Earliest upcoming assignment per course, for the dashboard's "what's due next" widget.
- * Only considers manually-added assignments (source: MANUAL) tied to a manually-created
- * course — Blackboard-derived events are reference-only and never appear here.
+ * Upcoming manually-added assignments (tied to a manually-created course), soonest due
+ * first. The dashboard's "what's due next" widget groups these client-side into "all
+ * assignments due on each course's next due day" — that grouping has to happen in the
+ * browser rather than here, since only the browser reliably knows the user's local
+ * calendar day (the server may be running in a different timezone, e.g. a UTC Docker
+ * host). Blackboard-derived events are reference-only and never appear here.
  */
-export async function nextAssignmentPerCourse(userId: string): Promise<NextAssignmentDTO[]> {
+export async function upcomingAssignments(userId: string): Promise<NextAssignmentDTO[]> {
   const events = await prisma.calendarEvent.findMany({
     where: {
       userId,
@@ -27,20 +30,12 @@ export async function nextAssignmentPerCourse(userId: string): Promise<NextAssig
     orderBy: { dueAt: "asc" },
   });
 
-  const seenCourses = new Set<string>();
-  const result: NextAssignmentDTO[] = [];
-  for (const event of events) {
-    const key = event.courseId ?? "__none__";
-    if (seenCourses.has(key)) continue;
-    seenCourses.add(key);
-    result.push({
-      courseId: event.courseId,
-      courseName: event.course?.name ?? "No course",
-      courseColor: event.course?.color ?? null,
-      eventId: event.id,
-      title: event.title,
-      dueAt: event.dueAt!,
-    });
-  }
-  return result;
+  return events.map((event) => ({
+    courseId: event.courseId,
+    courseName: event.course?.name ?? "No course",
+    courseColor: event.course?.color ?? null,
+    eventId: event.id,
+    title: event.title,
+    dueAt: event.dueAt!.toISOString(),
+  }));
 }

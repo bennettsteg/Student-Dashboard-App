@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
-import { nextAssignmentPerCourse } from "@/lib/calendar/queries";
+import { upcomingAssignments } from "@/lib/calendar/queries";
 import { NotificationWidget } from "@/components/dashboard/NotificationWidget";
-import { NextAssignmentWidget } from "@/components/dashboard/NextAssignmentWidget";
 import type { MiniCalendarEvent } from "@/components/dashboard/MiniCalendarWidget";
 
 import { MiniCalendarWidgetClient } from "./MiniCalendarWidgetClient";
+import { NextAssignmentWidgetClient } from "./NextAssignmentWidgetClient";
 
 function toCalendarEvents(
   events: { id: string; title: string; startAt: Date; endAt: Date; allDay: boolean; course: { color: string | null } | null }[],
@@ -38,12 +38,12 @@ export default async function DashboardPage() {
       orderBy: { receivedAt: "desc" },
       take: 5,
     }),
-    nextAssignmentPerCourse(userId),
+    upcomingAssignments(userId),
   ]);
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <NextAssignmentWidget items={nextAssignments} />
+      <NextAssignmentWidgetClient items={nextAssignments} />
       <MiniCalendarWidgetClient title="Class Calendar" events={toCalendarEvents(classEvents)} />
       <NotificationWidget
         unreadCount={unreadCount}
