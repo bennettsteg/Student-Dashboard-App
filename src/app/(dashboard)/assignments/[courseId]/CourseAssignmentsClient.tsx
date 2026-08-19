@@ -29,12 +29,11 @@ export function CourseAssignmentsClient({
   });
 
   function openCreateForm() {
-    const now = new Date();
     setFormValues({
       title: "",
       courseId,
-      day: toDateValue(now),
-      time: toTimeValue(now),
+      day: toDateValue(new Date()),
+      time: "23:59",
     });
     setFormOpen(true);
   }
