@@ -82,7 +82,12 @@ export function AssignmentForm({
       const [year, month, day] = values.day.split("-").map(Number);
       const [hours, minutes] = values.time.split(":").map(Number);
       const due = new Date(year, month - 1, day, hours, minutes);
-      const end = new Date(due.getTime() + DUE_DURATION_MS);
+      // Clamp to the same calendar day as `due` — a due time late enough in the
+      // evening (e.g. the 23:59 default) would otherwise push `end` past midnight,
+      // making FullCalendar render this as a 2-day-spanning event that visually
+      // bleeds into the next day's cell in month view.
+      const endOfDueDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+      const end = new Date(Math.min(due.getTime() + DUE_DURATION_MS, endOfDueDay.getTime()));
       const dueAt = due.toISOString();
       const input = {
         title: values.title,

@@ -169,3 +169,24 @@
 .fc .fc-list-event:hover td {
   background-color: var(--accent);
 }
+
+/* Keep day-grid events contained within their own day cell instead of bleeding
+   into neighboring cells when the title/time doesn't fit the column width
+   (narrow columns are common in the dashboard's mini calendar widgets).
+   FullCalendar injects its own stylesheet at runtime after this one, so
+   equal-specificity rules need !important to actually win (see .fc-button above). */
+.fc .fc-daygrid-event-harness {
+  max-width: 100% !important;
+}
+
+.fc .fc-daygrid-event {
+  overflow: hidden !important;
+}
+
+.fc .fc-daygrid-event .fc-event-time,
+.fc .fc-daygrid-event .fc-event-title {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+}
