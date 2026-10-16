@@ -1,47 +1,46 @@
-import { redirect } from "next/navigation";
-
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-const DEV_BYPASS_EMAIL = "dev@localhost";
+// Single-user, no-login-required-by-default app: viewing the dashboard never requires
+// Microsoft sign-in. When there's no real NextAuth session, we fall back to the one
+// local User row that holds all of this person's data — creating it on first visit if
+// it doesn't exist yet. This is the same row the auth.js adapter reuses (see auth.ts)
+// the first time "Connect Microsoft account" (Settings) completes, so connecting never
+// orphans data that was synced/entered before the user ever signed in.
+const LOCAL_USER_ID = "local-user";
 
-// Auth.js forces JWT-encoded session cookies for the Credentials provider, even with a
-// database-strategy config (see auth.ts) — mixing the two isn't supported by the library.
-// So the local-testing bypass lives here instead, entirely outside NextAuth: when enabled,
-// it skips the Microsoft sign-in flow altogether and hands back a fixed local User row.
-// Gated on NODE_ENV as a safety net; docker-compose also never forwards this var into the
-// deployed container, so it can't accidentally end up live in production either way.
-async function getDevBypassUserId(): Promise<string | null> {
-  if (process.env.NODE_ENV === "production") return null;
-  if (process.env.AUTH_DEV_BYPASS !== "true") return null;
+// Prefer the user that already has a linked Account (the real, connected one) and break
+// ties by id, so this is deterministic if an older DB still holds extra rows (e.g. the
+// former dev@localhost bypass user). Creation uses a fixed id via upsert so two
+// concurrent first requests can't each insert their own row.
+async function getLocalUserId(): Promise<string> {
+  const existing = await prisma.user.findFirst({
+    orderBy: [{ accounts: { _count: "desc" } }, { id: "asc" }],
+    select: { id: true },
+  });
+  if (existing) return existing.id;
 
   const user = await prisma.user.upsert({
-    where: { email: DEV_BYPASS_EMAIL },
+    where: { id: LOCAL_USER_ID },
     update: {},
-    create: { email: DEV_BYPASS_EMAIL, name: "Dev User" },
+    create: { id: LOCAL_USER_ID },
   });
   return user.id;
 }
 
 /**
- * Resolves the current user id, honoring AUTH_DEV_BYPASS. Returns null if unauthenticated.
- * A real NextAuth session always wins over the bypass — this lets you connect a real
- * Microsoft account from Settings while bypassed and have the app actually start using it
- * (Graph calls key off the real user's Account row, not the bypass user's). Sign out to
- * drop back to the bypass user.
+ * Resolves the current user id. Always succeeds: a real NextAuth session wins if present,
+ * otherwise this is the local user. Mail sync / Graph calls still require actually
+ * connecting a Microsoft account from Settings — the local user has no linked Account row.
  */
-export async function resolveUserId(): Promise<string | null> {
+export async function resolveUserId(): Promise<string> {
   const session = await auth();
   if (session?.user?.id) return session.user.id;
 
-  return getDevBypassUserId();
+  return getLocalUserId();
 }
 
-/** For use in (dashboard) pages: redirects to /signin instead of throwing if the session is somehow missing. */
+/** Alias for resolveUserId, used in (dashboard) pages. Kept for naming clarity at call sites. */
 export async function requireUserId(): Promise<string> {
-  const userId = await resolveUserId();
-  if (!userId) {
-    redirect("/signin");
-  }
-  return userId;
+  return resolveUserId();
 }
