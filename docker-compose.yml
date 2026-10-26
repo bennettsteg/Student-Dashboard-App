@@ -17,7 +17,10 @@ services:
       target: runner
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Loopback only: the app has no login, so it must not be reachable on the LAN or
+      # the internet. Host-installed Tailscale exposes it to the tailnet over HTTPS via
+      # `tailscale serve` (ADR-0003) - see docs/deployment/tailnet-https.md.
+      - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
