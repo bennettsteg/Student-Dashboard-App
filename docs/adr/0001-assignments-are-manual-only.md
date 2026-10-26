@@ -1,0 +1,3 @@
+# Assignments are entered by hand; Blackboard sync is removed
+
+The Blackboard iCal sync was an experiment: its feed has no reliable structure for courses or "graded" work, so synced assignments never integrated cleanly with Courses, grades, or completion. We removed it (feed fetching, parsing, the sync route, the worker job, and the `node-ical` dependency) rather than keep a half-integrated second source. Do not reintroduce a feed import without first deciding how it links to Courses and how Complete interacts with a resync, since a Complete (hard delete) would otherwise be undone by the next sync.
