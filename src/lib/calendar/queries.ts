@@ -15,7 +15,7 @@ export interface NextAssignmentDTO {
  * assignments due on each course's next due day" — that grouping has to happen in the
  * browser rather than here, since only the browser reliably knows the user's local
  * calendar day (the server may be running in a different timezone, e.g. a UTC Docker
- * host). Blackboard-derived events are reference-only and never appear here.
+ * host).
  */
 export async function upcomingAssignments(userId: string): Promise<NextAssignmentDTO[]> {
   const events = await prisma.calendarEvent.findMany({

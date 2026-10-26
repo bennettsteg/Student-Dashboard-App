@@ -3,8 +3,6 @@ import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { getValidAccessToken } from "@/lib/graph/token";
 
-import { SyncButton } from "./SyncButton";
-
 async function getMicrosoftConnectionStatus(userId: string) {
   const account = await prisma.account.findFirst({
     where: { userId, provider: "microsoft-entra-id" },
@@ -26,8 +24,6 @@ async function getMicrosoftConnectionStatus(userId: string) {
 
 export default async function SettingsPage() {
   const userId = await requireUserId();
-  const icsUrl = process.env.BLACKBOARD_ICS_URL;
-  const syncIntervalMinutes = process.env.SYNC_INTERVAL_MINUTES ?? "120";
   const connection = await getMicrosoftConnectionStatus(userId);
 
   return (
@@ -56,18 +52,6 @@ export default async function SettingsPage() {
             {connection.connected ? "Reconnect Microsoft account" : "Connect Microsoft account"}
           </button>
         </form>
-      </div>
-
-      <div className="max-w-md space-y-2 rounded-xl border border-border bg-card p-4">
-        <h2 className="font-medium">Blackboard calendar sync</h2>
-        <p className="text-sm text-muted-foreground">
-          Feed URL: {icsUrl ? <code className="break-all">{icsUrl}</code> : "not configured"}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Background sync runs every {syncIntervalMinutes} minutes. Events you edit after syncing
-          are never overwritten by future syncs.
-        </p>
-        <SyncButton />
       </div>
     </div>
   );

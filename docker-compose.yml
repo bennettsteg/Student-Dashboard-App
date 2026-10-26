@@ -24,7 +24,6 @@ services:
       AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_URL: ${AUTH_URL}
-      BLACKBOARD_ICS_URL: ${BLACKBOARD_ICS_URL}
     networks:
       - database-network
     depends_on:
@@ -40,8 +39,6 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      BLACKBOARD_ICS_URL: ${BLACKBOARD_ICS_URL}
-      SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-120}
     networks:
       - database-network
     depends_on:

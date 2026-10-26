@@ -1,23 +1,21 @@
-import { syncBlackboardCalendarForAllUsers } from "@/lib/ical/sync";
+// Long-running background worker. It currently has no scheduled jobs (Blackboard
+// sync was removed, ADR-0001); the daily mail auto-sync (ADR-0002) will be
+// registered here. Until then it just stays alive and idle so the compose
+// `worker` service keeps running cleanly.
 
-const icsUrl = process.env.BLACKBOARD_ICS_URL;
-const intervalMinutes = Number(process.env.SYNC_INTERVAL_MINUTES ?? "120");
+const HEARTBEAT_MS = 24 * 60 * 60 * 1000;
 
-if (!icsUrl) {
-  console.error("[worker] BLACKBOARD_ICS_URL is not set; nothing to sync. Exiting.");
-  process.exit(1);
+console.log("[worker] started; no jobs scheduled, idling.");
+
+const heartbeat = setInterval(() => {
+  console.log(`[worker] idle heartbeat at ${new Date().toISOString()}`);
+}, HEARTBEAT_MS);
+
+function shutdown(signal: string) {
+  console.log(`[worker] received ${signal}, shutting down.`);
+  clearInterval(heartbeat);
+  process.exit(0);
 }
 
-async function runSync() {
-  console.log(`[worker] starting Blackboard sync at ${new Date().toISOString()}`);
-  try {
-    const results = await syncBlackboardCalendarForAllUsers(icsUrl!);
-    console.log("[worker] sync complete:", results);
-  } catch (error) {
-    console.error("[worker] sync failed:", error);
-  }
-}
-
-console.log(`[worker] scheduling Blackboard sync every ${intervalMinutes} minute(s)`);
-runSync();
-setInterval(runSync, intervalMinutes * 60 * 1000);
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
