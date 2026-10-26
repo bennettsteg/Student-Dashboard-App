@@ -23,13 +23,9 @@ function toCalendarEvents(
 export default async function DashboardPage() {
   const userId = await requireUserId();
 
-  const [classEvents, blackboardEvents, unreadCount, recentMail, nextAssignments] = await Promise.all([
+  const [classEvents, unreadCount, recentMail, nextAssignments] = await Promise.all([
     prisma.calendarEvent.findMany({
       where: { userId, status: "ACTIVE", source: "MANUAL" },
-      include: { course: true },
-    }),
-    prisma.calendarEvent.findMany({
-      where: { userId, status: "ACTIVE", source: "BLACKBOARD_ICS" },
       include: { course: true },
     }),
     prisma.notificationItem.count({ where: { userId, source: "EMAIL", isRead: false } }),
@@ -54,10 +50,6 @@ export default async function DashboardPage() {
           fromAddress: m.fromAddress,
           receivedAt: m.receivedAt.toISOString(),
         }))}
-      />
-      <MiniCalendarWidgetClient
-        title="Blackboard Calendar"
-        events={toCalendarEvents(blackboardEvents)}
       />
     </div>
   );
