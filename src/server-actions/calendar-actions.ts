@@ -45,6 +45,8 @@ export async function createEvent(input: CalendarEventInput) {
   });
 
   revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath("/courses");
 }
 
 export async function updateEvent(id: string, input: CalendarEventInput) {
@@ -67,6 +69,8 @@ export async function updateEvent(id: string, input: CalendarEventInput) {
   });
 
   revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath("/courses");
 }
 
 export async function deleteEvent(id: string) {
@@ -77,4 +81,6 @@ export async function deleteEvent(id: string) {
   });
 
   revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath("/courses");
 }

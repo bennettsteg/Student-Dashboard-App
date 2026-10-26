@@ -51,6 +51,7 @@ export async function createCourse(input: CourseInput) {
   });
 
   revalidatePath("/schedule");
+  revalidatePath("/courses");
   revalidatePath("/assignments");
   revalidatePath("/");
 }
@@ -71,6 +72,7 @@ export async function updateCourse(id: string, input: CourseInput) {
   });
 
   revalidatePath("/schedule");
+  revalidatePath("/courses");
   revalidatePath("/assignments");
   revalidatePath("/");
 }
@@ -96,6 +98,7 @@ export async function deleteCourses(ids: string[]) {
   ]);
 
   revalidatePath("/schedule");
+  revalidatePath("/courses");
   revalidatePath("/assignments");
   revalidatePath("/");
 }

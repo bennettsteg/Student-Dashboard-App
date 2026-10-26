@@ -64,7 +64,7 @@ export default async function CoursesPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground">Open assignments</dt>
+                  <dt className="text-xs text-muted-foreground">Assignments</dt>
                   <dd className="font-semibold">{course._count.events}</dd>
                 </div>
                 <div>

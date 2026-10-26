@@ -27,6 +27,8 @@ export default async function SettingsPage() {
   const connection = await getMicrosoftConnectionStatus(userId);
   // Sign-out lives here now that the app shell has no header. Signing out only ends the
   // browser session; the stored Account row (and so mail sync) is kept.
+  // Exception to the resolveUserId() rule: auth() is only used to show the
+  // signed-in account and the Sign out button, not to identify the user.
   const session = await auth();
   const signedInAs = session?.user?.email ?? session?.user?.name ?? null;
 
