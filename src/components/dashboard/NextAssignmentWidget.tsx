@@ -47,7 +47,7 @@ export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) 
           <li key={item.eventId} className="flex items-center gap-2 text-sm">
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: item.courseColor ?? "#a0a2a8" }}
+              style={{ backgroundColor: item.courseColor ?? "var(--muted-foreground)" }}
             />
             <span className="min-w-0 flex-1">
               <span className="font-medium">{item.courseName}</span>

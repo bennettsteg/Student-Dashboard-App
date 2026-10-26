@@ -73,7 +73,7 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                         type="button"
                         onClick={() => openEdit(course)}
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-white hover:brightness-110"
-                        style={{ backgroundColor: course.color ?? "#9e1b32" }}
+                        style={{ backgroundColor: course.color ?? "var(--primary)" }}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium">
@@ -154,7 +154,7 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                         type="button"
                         onClick={() => openEdit(course)}
                         className="absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white hover:brightness-110"
-                        style={{ top, height, backgroundColor: course.color ?? "#9e1b32" }}
+                        style={{ top, height, backgroundColor: course.color ?? "var(--primary)" }}
                       >
                         <div className="truncate font-medium">
                           {course.name}

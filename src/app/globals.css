@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +39,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* StudyDesk extras (see :root). */
+  --color-highlight: var(--highlight);
+  --color-due-soon: var(--due-soon);
+  --color-due-soon-foreground: var(--due-soon-foreground);
+  --color-success: var(--success);
+  --color-surface-sunken: var(--surface-sunken);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,74 +54,49 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * StudyDesk palette, sampled from the design mockups (design/*.png): warm charcoal
+ * surfaces, a deep oxblood red primary, soft rose highlights, and a cream "Due soon"
+ * badge. There is a single (dark) palette and no light/dark toggle.
+ */
 :root {
-  /* University of Alabama theme: dark charcoal grey + white + crimson. */
-  --background: #1e2023;
-  --foreground: #f5f5f5;
-  --card: #2b2d31;
-  --card-foreground: #f5f5f5;
-  --popover: #2b2d31;
-  --popover-foreground: #f5f5f5;
-  --primary: #9e1b32;
+  --background: #292727; /* page */
+  --foreground: #eeebeb;
+  --card: #2e2b2b; /* cards, table, sidebar */
+  --card-foreground: #eeebeb;
+  --popover: #2e2b2b;
+  --popover-foreground: #eeebeb;
+  --primary: #810505; /* active nav, primary buttons, today */
   --primary-foreground: #ffffff;
-  --secondary: #3d3f44;
-  --secondary-foreground: #f5f5f5;
-  --muted: #2b2d31;
-  --muted-foreground: #a0a2a8;
-  --accent: #3d3f44;
-  --accent-foreground: #f5f5f5;
-  --destructive: #b91c3c;
-  --border: #3d3f44;
-  --input: #3d3f44;
-  --ring: #9e1b32;
-  --chart-1: #9e1b32;
-  --chart-2: #c9a15a;
-  --chart-3: #a0a2a8;
-  --chart-4: #6b6d72;
-  --chart-5: #f5f5f5;
+  --secondary: #383434; /* week-strip cells, raised chips */
+  --secondary-foreground: #eeebeb;
+  --muted: #383434;
+  --muted-foreground: #a8a1a1;
+  --accent: #3a3535; /* hover / unread row */
+  --accent-foreground: #eeebeb;
+  --destructive: #c0392b;
+  --border: #3e3a3a;
+  --input: #554f4f;
+  --ring: #c68f8f;
+  --highlight: #c68f8f; /* unread dots, grade bars, text links */
+  --due-soon: #fbebd0;
+  --due-soon-foreground: #7a3e00;
+  --success: #6fae7f;
+  --surface-sunken: #262323; /* out-of-month calendar cells */
+  --chart-1: #c68f8f;
+  --chart-2: #810505;
+  --chart-3: #fbebd0;
+  --chart-4: #a8a1a1;
+  --chart-5: #eeebeb;
   --radius: 0.625rem;
-  --sidebar: #17181b;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #9e1b32;
+  --sidebar: #2e2b2b;
+  --sidebar-foreground: #cbc5c5;
+  --sidebar-primary: #810505;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2b2d31;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #2b2d31;
-  --sidebar-ring: #9e1b32;
-}
-
-.dark {
-  --background: #1e2023;
-  --foreground: #f5f5f5;
-  --card: #2b2d31;
-  --card-foreground: #f5f5f5;
-  --popover: #2b2d31;
-  --popover-foreground: #f5f5f5;
-  --primary: #9e1b32;
-  --primary-foreground: #ffffff;
-  --secondary: #3d3f44;
-  --secondary-foreground: #f5f5f5;
-  --muted: #2b2d31;
-  --muted-foreground: #a0a2a8;
-  --accent: #3d3f44;
-  --accent-foreground: #f5f5f5;
-  --destructive: #b91c3c;
-  --border: #3d3f44;
-  --input: #3d3f44;
-  --ring: #9e1b32;
-  --chart-1: #9e1b32;
-  --chart-2: #c9a15a;
-  --chart-3: #a0a2a8;
-  --chart-4: #6b6d72;
-  --chart-5: #f5f5f5;
-  --sidebar: #17181b;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #9e1b32;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2b2d31;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #2b2d31;
-  --sidebar-ring: #9e1b32;
+  --sidebar-accent: #383434;
+  --sidebar-accent-foreground: #eeebeb;
+  --sidebar-border: #423e3e;
+  --sidebar-ring: #c68f8f;
 }
 
 @layer base {
@@ -128,20 +109,27 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading font-bold tracking-tight;
+  }
 }
 
-/* FullCalendar theme overrides to match the dark grey / crimson / white palette. */
+/* FullCalendar is reskinned onto the theme tokens above via its --fc-* variables. */
 .fc {
   --fc-border-color: var(--border);
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: var(--muted);
   --fc-list-event-hover-bg-color: var(--accent);
-  --fc-today-bg-color: color-mix(in oklab, var(--primary) 18%, transparent);
-  --fc-event-bg-color: var(--primary);
-  --fc-event-border-color: var(--primary);
-  --fc-event-text-color: var(--primary-foreground);
+  --fc-today-bg-color: color-mix(in oklab, var(--primary) 12%, transparent);
+  --fc-non-business-color: var(--surface-sunken);
+  /* Assignment due dates render as cream "Due soon" chips, as in the Calendar mockup. */
+  --fc-event-bg-color: var(--due-soon);
+  --fc-event-border-color: var(--due-soon);
+  --fc-event-text-color: var(--due-soon-foreground);
   --fc-button-bg-color: var(--secondary);
-  --fc-button-border-color: var(--secondary);
+  --fc-button-border-color: var(--border);
   --fc-button-hover-bg-color: var(--primary);
   --fc-button-hover-border-color: var(--primary);
   --fc-button-active-bg-color: var(--primary);
@@ -189,4 +177,17 @@
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   min-width: 0 !important;
+}
+
+/* Out-of-month days sit on a sunken surface; today's date number is a primary pill. */
+.fc .fc-daygrid-day.fc-day-other {
+  background-color: var(--surface-sunken);
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+  min-width: 1.75em;
+  text-align: center;
 }
