@@ -70,7 +70,7 @@ export function AssignmentsCourseList({ courses }: { courses: AssignmentsCourseD
               <span className="flex items-center gap-2">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: course.color ?? "#a0a2a8" }}
+                  style={{ backgroundColor: course.color ?? "var(--muted-foreground)" }}
                 />
                 <span className="font-medium">{course.name}</span>
                 {course.code && <span className="text-muted-foreground">({course.code})</span>}

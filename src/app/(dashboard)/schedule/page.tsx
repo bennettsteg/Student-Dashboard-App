@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
-import { CourseForm } from "@/components/courses/CourseForm";
 import { ScheduleGrid, type CourseScheduleDTO } from "@/components/courses/ScheduleGrid";
 
-export default async function CoursesSchedulePage() {
+export default async function SchedulePage() {
   const userId = await requireUserId();
 
   const courses = await prisma.course.findMany({
@@ -24,8 +23,7 @@ export default async function CoursesSchedulePage() {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4">
-      <h1 className="text-lg font-semibold">Courses & Schedule</h1>
-      <CourseForm />
+      <h1 className="text-2xl">Schedule</h1>
       <ScheduleGrid courses={courseDTOs} />
     </div>
   );

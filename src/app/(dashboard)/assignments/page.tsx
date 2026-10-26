@@ -26,8 +26,8 @@ export default async function AssignmentsPage() {
       {courses.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
           Add a course on the{" "}
-          <Link href="/schedule" className="underline hover:text-foreground">
-            Courses & Schedule
+          <Link href="/courses" className="underline hover:text-foreground">
+            Courses
           </Link>{" "}
           page before adding assignments.
         </div>
