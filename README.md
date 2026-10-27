@@ -24,6 +24,8 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 The app is self-hosted with Docker Compose and served over HTTPS **on the tailnet only** through `tailscale serve`. Tailscale Funnel and public exposure are deliberately not used. For setup, the `AUTH_URL` and Entra redirect URI changes, and a verification checklist, see [docs/deployment/tailnet-https.md](docs/deployment/tailnet-https.md).
 
+StudyDesk is an installable PWA. To add it to an iPhone Home Screen (Safari) or install it from Brave or Edge on desktop, see [docs/deployment/install-pwa.md](docs/deployment/install-pwa.md).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
