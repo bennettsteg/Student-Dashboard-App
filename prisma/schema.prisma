@@ -33,13 +33,14 @@ model User {
   // Overall Reminder switch; per-device push subscriptions are separate and survive turning it off.
   remindersEnabled Boolean @default(false)
 
-  accounts      Account[]
-  sessions      Session[]
-  courses       Course[]
-  assignments   Assignment[]
-  notifications NotificationItem[]
-  mailSyncState MailSyncState?
-  links         Link[]
+  accounts          Account[]
+  sessions          Session[]
+  courses           Course[]
+  assignments       Assignment[]
+  notifications     NotificationItem[]
+  mailSyncState     MailSyncState?
+  links             Link[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -168,6 +169,24 @@ model NotificationItem {
 
   @@unique([userId, source, externalId])
   @@index([userId, isRead])
+}
+
+// One enabled device (a browser/app install's Web Push subscription). A row exists only for
+// devices where the student pressed "Enable reminders on this device"; turning Reminders off
+// overall keeps these rows. Rows the push service reports as gone (404/410) are deleted on send.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  // The push service URL for this device; globally unique, so re-enabling upserts.
+  endpoint  String   @unique
+  // Client public key and auth secret (base64url), needed to encrypt the payload.
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Per-user Mail Sync bookkeeping. Written by every sync, manual or automatic (ADR-0002).
