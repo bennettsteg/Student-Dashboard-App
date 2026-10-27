@@ -1,6 +1,6 @@
 # Manual verification checklist
 
-**Status: NOT YET RUN.** Every item below needs a real device, the real tailnet or the real server, so none of it could be run or checked in development, and **no result here has been recorded**. This is the checklist for GitHub issue #17 (Docs refresh and manual verification). The student runs it after deploying and fills in the Result column (pass, fail, or what happened) and the date. Do not mark an item as run until you have actually done it.
+**Status: partly run.** Items 1.3 to 1.9 (the HTTPS and tailnet checks) were ticked off by the student before this checklist replaced the one in tailnet-https.md; everything else is not yet run. Every item below needs a real device, the real tailnet or the real server, so none of it could be run or checked in development, and no other result has been recorded. This is the checklist for GitHub issue #17 (Docs refresh and manual verification). The student runs it after deploying and fills in the Result column (pass, fail, or what happened) and the date. Do not mark an item as run until you have actually done it.
 
 Automated checks (typecheck, lint, tests, production build) do not replace any of this; they are run separately.
 
@@ -16,13 +16,13 @@ Details: [tailnet-https.md](tailnet-https.md).
 | --- | --- | --- | --- | --- |
 | 1.1 | **Migrations:** after `docker compose up -d --build`, `docker compose logs migrate` ends with "All migrations have been successfully applied." (database backed up first). | Not yet run | | |
 | 1.2 | **Worker:** `docker compose logs worker` shows `[worker] started`, a `mail tick` line and a `reminder tick` line, and exactly one worker container is running (`docker compose ps`). | Not yet run | | |
-| 1.3 | **Desktop, Tailscale on:** `https://<host>.<tailnet>.ts.net` loads the dashboard with a valid certificate (padlock, no warning). | Not yet run | | |
-| 1.4 | **Phone, Tailscale on:** the same URL loads in Safari with a valid certificate. | Not yet run | | |
-| 1.5 | **Connect Microsoft:** at the HTTPS address, Settings, Connect Microsoft account completes and returns to the app, and Sync mail works afterwards. (Entra redirect URI and `AUTH_URL` updated together.) | Not yet run | | |
-| 1.6 | **Phone, Tailscale off, on cellular:** the URL does not load (the name does not resolve or the connection fails). | Not yet run | | |
-| 1.7 | **LAN device not on Tailscale:** `curl -m 5 http://<server-lan-ip>:3000` fails (refused or timeout), and `https://<server-lan-ip>` does not serve the app. | Not yet run | | |
-| 1.8 | **On the server:** `ss -ltnp \| grep 3000` shows the port bound to `127.0.0.1` only, not `0.0.0.0` or `*`. | Not yet run | | |
-| 1.9 | **On the server:** `tailscale serve status` says "tailnet only", and `tailscale funnel status` shows no Funnel. | Not yet run | | |
+| 1.3 | **Desktop, Tailscale on:** `https://<host>.<tailnet>.ts.net` loads the dashboard with a valid certificate (padlock, no warning). | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.4 | **Phone, Tailscale on:** the same URL loads in Safari with a valid certificate. | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.5 | **Connect Microsoft:** at the HTTPS address, Settings, Connect Microsoft account completes and returns to the app, and Sync mail works afterwards. (Entra redirect URI and `AUTH_URL` updated together.) | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.6 | **Phone, Tailscale off, on cellular:** the URL does not load (the name does not resolve or the connection fails). | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.7 | **LAN device not on Tailscale:** `curl -m 5 http://<server-lan-ip>:3000` fails (refused or timeout), and `https://<server-lan-ip>` does not serve the app. | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.8 | **On the server:** `ss -ltnp \| grep 3000` shows the port bound to `127.0.0.1` only, not `0.0.0.0` or `*`. | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
+| 1.9 | **On the server:** `tailscale serve status` says "tailnet only", and `tailscale funnel status` shows no Funnel. | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
 
 ## 2. Install the app
 
