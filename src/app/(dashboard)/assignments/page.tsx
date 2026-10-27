@@ -9,7 +9,7 @@ export default async function AssignmentsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const userId = await requireUserId();
-  const { course } = await searchParams;
+  const { course, assignment: openAssignment } = await searchParams;
 
   const [courses, assignments] = await Promise.all([
     prisma.course.findMany({ where: { userId }, orderBy: { name: "asc" } }),
@@ -24,6 +24,8 @@ export default async function AssignmentsPage({
     <AssignmentsViewClient
       courses={courses.map((c) => ({ id: c.id, name: c.name, color: c.color }))}
       courseFilter={courseFilter}
+      // Set by the header search; an unknown id simply opens nothing.
+      openAssignmentId={typeof openAssignment === "string" ? openAssignment : null}
       assignments={assignments.map((a) => ({
         id: a.id,
         title: a.title,

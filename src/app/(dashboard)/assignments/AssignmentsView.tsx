@@ -2,21 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 import {
   AssignmentForm,
   type AssignmentFormValues,
   type CourseOption,
 } from "@/components/assignments/AssignmentForm";
+import { CompleteAssignmentDialog } from "@/components/assignments/CompleteAssignmentDialog";
 import { StatusBadge } from "@/components/assignments/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DEFAULT_DUE_TIME, visibleAssignments } from "@/lib/assignments/list";
 import { assignmentStatus } from "@/lib/assignments/status";
 import { toDateValue, toTimeValue } from "@/lib/dates";
-import { completeAssignment } from "@/server-actions/assignment-actions";
 
 export interface AssignmentDTO {
   id: string;
@@ -38,17 +37,22 @@ export function AssignmentsView({
   assignments,
   courses,
   courseFilter,
+  openAssignmentId = null,
 }: {
   assignments: AssignmentDTO[];
   courses: CourseOption[];
   /** The Course the table is filtered to, or null for all Courses. */
   courseFilter: string | null;
+  /** An Assignment to open in the edit form on arrival (header search lands here). */
+  openAssignmentId?: string | null;
 }) {
   const router = useRouter();
-  const [formOpen, setFormOpen] = useState(false);
-  const [formValues, setFormValues] = useState<AssignmentFormValues>(emptyForm(courseFilter));
+  const target = openAssignmentId ? assignments.find((a) => a.id === openAssignmentId) : undefined;
+  const [formOpen, setFormOpen] = useState(target !== undefined);
+  const [formValues, setFormValues] = useState<AssignmentFormValues>(
+    target ? editValues(target) : emptyForm(courseFilter),
+  );
   const [completing, setCompleting] = useState<AssignmentDTO | null>(null);
-  const [pending, startTransition] = useTransition();
 
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date();
@@ -72,35 +76,26 @@ export function AssignmentsView({
     setFormOpen(true);
   }
 
-  function openEdit(assignment: AssignmentDTO) {
+  function editValues(assignment: AssignmentDTO): AssignmentFormValues {
     const due = new Date(assignment.dueAt);
-    setFormValues({
+    return {
       id: assignment.id,
       title: assignment.title,
       courseId: assignment.courseId,
       day: toDateValue(due),
       time: toTimeValue(due),
       notes: assignment.notes ?? "",
-    });
+    };
+  }
+
+  function openEdit(assignment: AssignmentDTO) {
+    setFormValues(editValues(assignment));
     setFormOpen(true);
   }
 
   function setFilter(courseId: string) {
     router.replace(courseId === ALL_COURSES ? "/assignments" : `/assignments?course=${courseId}`, {
       scroll: false,
-    });
-  }
-
-  function confirmComplete() {
-    if (!completing) return;
-    const id = completing.id;
-    startTransition(async () => {
-      try {
-        await completeAssignment(id);
-      } finally {
-        setCompleting(null);
-        router.refresh();
-      }
     });
   }
 
@@ -247,17 +242,7 @@ export function AssignmentsView({
         onSaved={() => router.refresh()}
       />
 
-      <ConfirmDialog
-        open={completing !== null}
-        onOpenChange={(open) => {
-          if (!open) setCompleting(null);
-        }}
-        title="Complete this assignment?"
-        description={`"${completing?.title ?? ""}" will be permanently deleted. This can't be undone.`}
-        confirmLabel="Yes, complete"
-        pending={pending}
-        onConfirm={confirmComplete}
-      />
+      <CompleteAssignmentDialog assignment={completing} onClose={() => setCompleting(null)} />
     </div>
   );
 }
