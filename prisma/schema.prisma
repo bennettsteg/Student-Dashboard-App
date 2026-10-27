@@ -75,6 +75,7 @@ model Course {
   userId     String
   name       String
   code       String?
+  instructor String?
   color      String?
   location   String?
   // ISO weekday numbers restricted to weekdays: 1=Monday ... 5=Friday.
