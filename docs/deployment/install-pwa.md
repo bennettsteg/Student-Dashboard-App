@@ -36,6 +36,10 @@ Both are Chromium-based and install the same way.
 
 To uninstall, use the app window's menu (`...`), **Uninstall StudyDesk**, or remove it from your OS app list.
 
+## Reminders (push)
+
+Once the app is installed, enable Reminders from Settings. Server keys, per-device setup, the optional Brave desktop push setting and the push verification checklist are in [push-notifications.md](push-notifications.md).
+
 ## What happens when the server is unreachable
 
 If the installed app can't reach the server (most often because Tailscale is off, or the server is down), it shows a "Can't reach StudyDesk, is Tailscale on?" screen instead of a blank browser error. Turn Tailscale on and tap **Try again**; the page also reloads on its own when the connection returns.
