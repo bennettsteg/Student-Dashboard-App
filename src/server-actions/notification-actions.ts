@@ -2,43 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 
-import { prisma } from "@/lib/db";
-import { setMailReadState } from "@/lib/graph/mail";
-import { getValidAccessToken } from "@/lib/graph/token";
-import { syncMailNotifications, type MailSyncResult } from "@/lib/graph/syncNotifications";
+import { markAllRead, setNotificationRead as setRead } from "@/lib/mail/notifications";
+import { runMailSync, type MailSyncOutcome } from "@/lib/mail/sync";
 import { resolveUserId } from "@/lib/session";
 
-async function requireUserId() {
-  const userId = await resolveUserId();
-  if (!userId) {
-    throw new Error("Not authenticated");
-  }
-  return userId;
-}
-
-export async function refreshNotifications(): Promise<MailSyncResult> {
-  const userId = await requireUserId();
-  const result = await syncMailNotifications(userId);
+function revalidateNotificationViews() {
   revalidatePath("/notifications");
   revalidatePath("/");
-  return result;
+}
+
+/** Manual "Sync mail": subject to the server-side cooldown and one-sync-at-a-time rule. */
+export async function syncMail(): Promise<MailSyncOutcome> {
+  const userId = await resolveUserId();
+  const outcome = await runMailSync(userId, { trigger: "manual" });
+  // A refused sync changes nothing; every other outcome updates the sync state shown on the page.
+  if (outcome.status !== "cooldown" && outcome.status !== "already-running") {
+    revalidateNotificationViews();
+  }
+  return outcome;
 }
 
 export async function setNotificationRead(id: string, isRead: boolean): Promise<void> {
-  const userId = await requireUserId();
+  const userId = await resolveUserId();
+  await setRead(userId, id, isRead);
+  revalidateNotificationViews();
+}
 
-  const item = await prisma.notificationItem.findFirst({ where: { id, userId } });
-  if (!item) {
-    throw new Error("Notification not found");
-  }
-
-  if (item.source === "EMAIL") {
-    const accessToken = await getValidAccessToken(userId);
-    await setMailReadState(accessToken, item.externalId, isRead);
-  }
-
-  await prisma.notificationItem.update({ where: { id }, data: { isRead } });
-
-  revalidatePath("/notifications");
-  revalidatePath("/");
+export async function markAllNotificationsRead(): Promise<void> {
+  const userId = await resolveUserId();
+  await markAllRead(userId);
+  revalidateNotificationViews();
 }

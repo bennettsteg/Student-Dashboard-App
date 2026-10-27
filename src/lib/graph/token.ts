@@ -2,6 +2,18 @@ import { prisma } from "@/lib/db";
 
 const REFRESH_MARGIN_SECONDS = 300;
 
+/**
+ * The stored Microsoft credential can no longer be used and only the student can fix it by
+ * reconnecting Microsoft in Settings (no linked account, no refresh token, or Microsoft
+ * rejected the refresh token with `invalid_grant`). Retrying cannot help.
+ */
+export class MicrosoftReconnectRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MicrosoftReconnectRequiredError";
+  }
+}
+
 interface TokenRefreshResponse {
   access_token: string;
   refresh_token?: string;
@@ -14,7 +26,7 @@ export async function getValidAccessToken(userId: string): Promise<string> {
     where: { userId, provider: "microsoft-entra-id" },
   });
   if (!account?.access_token) {
-    throw new Error("No linked Microsoft account for this user");
+    throw new MicrosoftReconnectRequiredError("No linked Microsoft account for this user");
   }
 
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -24,7 +36,9 @@ export async function getValidAccessToken(userId: string): Promise<string> {
   }
 
   if (!account.refresh_token) {
-    throw new Error("Microsoft account has no refresh token; sign in again");
+    throw new MicrosoftReconnectRequiredError(
+      "Microsoft account has no refresh token; reconnect Microsoft",
+    );
   }
 
   const params = new URLSearchParams({
@@ -41,7 +55,10 @@ export async function getValidAccessToken(userId: string): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to refresh Microsoft token: ${res.status} ${await res.text()}`);
+    const body = await res.text();
+    const message = `Failed to refresh Microsoft token: ${res.status} ${body}`;
+    if (isInvalidGrant(body)) throw new MicrosoftReconnectRequiredError(message);
+    throw new Error(message);
   }
 
   const data: TokenRefreshResponse = await res.json();
@@ -56,4 +73,12 @@ export async function getValidAccessToken(userId: string): Promise<string> {
   });
 
   return data.access_token;
+}
+
+function isInvalidGrant(responseBody: string): boolean {
+  try {
+    return (JSON.parse(responseBody) as { error?: string }).error === "invalid_grant";
+  } catch {
+    return false;
+  }
 }

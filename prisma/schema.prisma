@@ -26,6 +26,7 @@ model User {
   courses       Course[]
   calendarEvents CalendarEvent[]
   notifications NotificationItem[]
+  mailSyncState MailSyncState?
   links         Link[]
 }
 
@@ -153,25 +154,27 @@ model Link {
 
 enum NotificationSource {
   EMAIL
-  TEAMS_CHAT
-  TEAMS_CHANNEL
 }
 
+// A Notification: one email from the student's Outlook account, shown read-only.
 model NotificationItem {
   id          String             @id @default(cuid())
   userId      String
   source      NotificationSource
   // Graph message id.
   externalId  String
-  // conversationId/chatId, for grouping/threading.
+  // Graph conversationId, for grouping/threading.
   threadId    String?
   subject     String?
   preview     String?
   fromName    String?
   fromAddress String?
+  // Graph `webLink`: where "Open in Outlook" goes.
+  webLink     String?
   receivedAt  DateTime
+  // App-only flag. Seeded from Outlook's read state when the row is first created and never
+  // overwritten by a later sync (the app only holds Mail.Read, so it can't write back).
   isRead      Boolean            @default(false)
-  raw         Json?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -179,4 +182,23 @@ model NotificationItem {
 
   @@unique([userId, source, externalId])
   @@index([userId, isRead])
+}
+
+// Per-user Mail Sync bookkeeping. Written by every sync, manual or automatic (ADR-0002).
+model MailSyncState {
+  userId          String    @id
+  // When the last sync that completed successfully finished. Drives the "last synced" display
+  // and the 24-hour auto-sync guard.
+  lastSuccessAt   DateTime?
+  // When the last sync (successful or not) started. Drives the manual-sync cooldown.
+  lastAttemptAt   DateTime?
+  // Error message of the last attempt, or null if it succeeded.
+  lastError       String?
+  // Set when Microsoft rejects the refresh token; auto-sync stays paused until a sync succeeds
+  // again after the student reconnects Microsoft.
+  needsReconnect  Boolean   @default(false)
+  // Set while a sync is running, so at most one runs per user. Stale after a few minutes.
+  syncStartedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
