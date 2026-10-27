@@ -11,7 +11,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-58 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+    <aside className="sticky top-[env(safe-area-inset-top)] hidden h-[calc(100dvh-env(safe-area-inset-top))] w-58 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
       <div className="flex items-center gap-3 px-7 pt-7 pb-6">
         <span className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
           <GraduationCap className="size-4" />
