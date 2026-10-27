@@ -2,8 +2,11 @@ import { auth, signIn, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { microsoftConnectionState } from "@/lib/mail/connection";
 import { getProfile } from "@/lib/profile/profile";
+import { listSubscriptions } from "@/lib/push/subscriptions";
+import { readVapidConfig } from "@/lib/push/vapid";
 import { requireUserId } from "@/lib/session";
 
+import { EnableRemindersControl } from "./EnableRemindersControl";
 import { ProfileForm } from "./ProfileForm";
 import { SyncMailControl } from "./SyncMailControl";
 
@@ -16,14 +19,17 @@ const CONNECTION_COPY = {
 export default async function SettingsPage() {
   const userId = await requireUserId();
 
-  const [profile, account, syncState] = await Promise.all([
+  const [profile, account, syncState, pushSubscriptions] = await Promise.all([
     getProfile(userId),
     prisma.account.findFirst({
       where: { userId, provider: "microsoft-entra-id" },
       select: { id: true },
     }),
     prisma.mailSyncState.findUnique({ where: { userId } }),
+    listSubscriptions(userId),
   ]);
+  // Read at request time (not build time) so the VAPID public key can come from the container env.
+  const vapid = readVapidConfig();
 
   // Derived from stored state only; opening Settings never calls Microsoft.
   const connection = microsoftConnectionState({
@@ -62,6 +68,23 @@ export default async function SettingsPage() {
         email={account ? profile.email : null}
         timeZones={timeZones}
       />
+
+      <section className="space-y-4 rounded-xl border border-border bg-card p-6">
+        <h2 className="text-lg font-bold">Reminders on this device</h2>
+        <p className="text-sm text-muted-foreground">
+          Reminders are pushed to each device you enable here. Open StudyDesk on the device you
+          want, from the installed app on iPhone, and press the button.
+        </p>
+        <EnableRemindersControl
+          publicKey={vapid.ok ? vapid.publicKey : null}
+          registeredEndpoints={pushSubscriptions.map((s) => s.endpoint)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {pushSubscriptions.length === 0
+            ? "No devices are enabled yet."
+            : `${pushSubscriptions.length} ${pushSubscriptions.length === 1 ? "device is" : "devices are"} enabled.`}
+        </p>
+      </section>
 
       <section className="space-y-4 rounded-xl border border-border bg-card p-6">
         <h2 className="text-lg font-bold">Microsoft account</h2>

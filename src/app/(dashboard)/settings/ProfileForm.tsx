@@ -188,10 +188,6 @@ export function ProfileForm({ initial, email, timeZones }: ProfileFormProps) {
               onChange={(reminderTime) => setValues({ ...values, reminderTime })}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
-            Reminders aren&apos;t delivered yet. These preferences are saved so they apply once
-            delivery is switched on.
-          </p>
         </div>
       </section>
 
