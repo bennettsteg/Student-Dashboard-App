@@ -17,19 +17,11 @@ import {
   type CategoryInput,
   type EntryInput,
 } from "@/lib/grades/validation";
-import { resolveUserId } from "@/lib/session";
+import { requireUserId } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 const NOT_FOUND: ActionResult = { ok: false, error: "That course or item no longer exists." };
-
-async function requireUserId() {
-  const userId = await resolveUserId();
-  if (!userId) {
-    throw new Error("Not authenticated");
-  }
-  return userId;
-}
 
 /** Grades show on the Course detail page (a child of /courses) and on the Course cards. */
 function revalidateGrades() {
