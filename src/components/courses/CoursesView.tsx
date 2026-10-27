@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formatPercent } from "@/lib/grades/format";
 
 import { CourseDropDialog } from "./CourseDropDialog";
 import { CourseFormDialog } from "./CourseFormDialog";
@@ -63,19 +65,30 @@ function CourseCard({
     <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg">{course.name}</h2>
+          <h2 className="truncate text-lg">
+            <Link
+              href={`/courses/${course.id}`}
+              className="hover:underline focus-visible:underline"
+            >
+              {course.name}
+            </Link>
+          </h2>
           <p className="truncate text-sm text-muted-foreground">
             {course.instructor ?? "No instructor"}
             {course.code ? ` · ${course.code}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {/* Current Grade slot: a dash until Grade Entries exist (issue #8 fills it in). */}
+          {/* Current Grade: a dash until the Course has a Grade Entry, never a misleading 0%. */}
           <span
-            className="mr-1 text-2xl font-bold text-muted-foreground"
-            aria-label="No current grade yet"
+            className={`mr-1 text-2xl font-bold ${course.currentGrade === null ? "text-muted-foreground" : ""}`}
+            aria-label={
+              course.currentGrade === null
+                ? "No current grade yet"
+                : `Current grade ${formatPercent(course.currentGrade)}`
+            }
           >
-            —
+            {formatPercent(course.currentGrade)}
           </span>
           <Button
             type="button"
@@ -98,7 +111,14 @@ function CourseCard({
         </div>
       </header>
 
-      <div className="h-1.5 rounded-full bg-secondary" aria-hidden />
+      <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+        {course.currentGrade !== null && (
+          <div
+            className="h-full rounded-full bg-highlight"
+            style={{ width: `${Math.min(Math.max(course.currentGrade, 0), 100)}%` }}
+          />
+        )}
+      </div>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <Stat label="Meets">
