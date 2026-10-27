@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A personal, single-user student dashboard: aggregates Outlook mail (Microsoft Graph) and manually-entered courses, assignments and links, with a home-page overview of notifications / mini calendar / next-assignment-per-class. Built for self-hosting via Docker on a home server. Not multi-tenant, not designed for other users.
 
-**An overhaul is planned and not yet implemented.** The code described below is the current state. The agreed direction is recorded in `CONTEXT.md` (domain language) and `docs/adr/`: manual-only assignments with Blackboard sync removed (ADR-0001 — the sync code is already gone; the `Assignment` data model is not yet built), a daily mail auto-sync (ADR-0002), and a tailnet-only HTTPS PWA (ADR-0003). Where this file and an ADR disagree about the target, the ADR wins; where they disagree about what the code does today, this file wins.
+**An overhaul is planned and not yet implemented.** The code described below is the current state. The agreed direction is recorded in `CONTEXT.md` (domain language) and `docs/adr/`: manual-only assignments with Blackboard sync removed (ADR-0001 — the sync code is gone and the `Assignment` model is in place), a daily mail auto-sync (ADR-0002), and a tailnet-only HTTPS PWA (ADR-0003). Where this file and an ADR disagree about the target, the ADR wins; where they disagree about what the code does today, this file wins.
 
 ## Commands
 
@@ -61,9 +61,11 @@ Because there's no login, the network boundary is the access control. In `docker
 
 Known issue (unverified by running): the read/unread toggle PATCHes the message in Graph, but the app only requests `Mail.Read` and Graph requires `Mail.ReadWrite` to change `isRead`, so the toggle likely fails; and `syncNotifications.ts` overwrites the local `isRead` on every sync. The overhaul makes read/unread an app-only flag instead.
 
-### Calendar events (Blackboard sync removed)
+### Assignments (Blackboard sync removed)
 
-Blackboard iCal sync has been removed (ADR-0001): no feed fetching, parsing, sync route/action, worker job, or `node-ical` dependency. `CalendarEvent` still carries the old sync-only columns (`source`, `externalUid`, `recurrenceId`, `lastSyncedHash`, `userModified`, `status`, `sourceCourseName`) and the `EventSource`/`EventStatus` enums; the planned `Assignment` migration (issue #5) replaces this table and deletes leftover `BLACKBOARD_ICS` rows, so until then queries keep filtering on `source: "MANUAL"`, `status: "ACTIVE"`. Don't build on those columns.
+Blackboard iCal sync has been removed (ADR-0001): no feed fetching, parsing, sync route/action, worker job, or `node-ical` dependency. The old `CalendarEvent` table and its `EventSource`/`EventStatus` enums are gone, replaced by `Assignment` (title, optional notes, required `courseId`, `dueAt` instant, `createdAt`; cascades from both `Course` and `User`). Migration `20261026000000_assignment_model` converted old rows and is documented in `docs/deployment/assignment-migration.md` (back up first). Mutations live in `src/server-actions/assignment-actions.ts`.
+
+Assignment status (Overdue / Due today / Due soon within 7 days / Upcoming) is never stored. `src/lib/assignments/status.ts` derives it from `dueAt`, the current time and an IANA timezone (pure functions, tested). Don't compare dates with the server's own timezone; there is no per-user timezone setting yet (it arrives with the Settings ticket).
 
 ### Worker (`worker/index.ts`)
 
