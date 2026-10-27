@@ -37,10 +37,12 @@ const DAY_WINDOW_MS = 30 * 60 * 60 * 1000;
  *
  * Holds no state between calls, so a worker restart or repeated ticks cannot resend: the user's
  * local date is recorded in `ReminderState`. What gets recorded:
- *  - at least one device was attempted (accepted, gone, or failed): record today. Accepted
- *    devices must not be sent to twice, and a push-service outage must not be hammered every
- *    few minutes, so a Reminder is attempted at most once per local day. A device that failed
- *    for a transient reason keeps its registration and receives tomorrow's digest.
+ *  - at least one device accepted the push, or every device was reported gone: record today.
+ *    Accepted devices must not be sent to twice. A device that failed transiently while another
+ *    accepted keeps its registration and receives tomorrow's digest.
+ *  - no device accepted it and at least one failed transiently (push-service outage, network):
+ *    record the failure time only. The guard retries after REMINDER_RETRY_MS, until the local
+ *    day ends; nothing was accepted, so a retry cannot duplicate.
  *  - no device registered: record nothing. Nothing was sent, so there is nothing to duplicate,
  *    and a device enabled later the same day still gets today's Reminder on the next tick.
  *  - pushes cannot be sent at all (VAPID not configured): record nothing, log the error, and
@@ -65,6 +67,7 @@ export async function runReminderTick(
         reminderTime: user.reminderTime,
         timeZone: user.timezone,
         lastSentLocalDate: user.reminderState?.lastSentLocalDate ?? null,
+        lastFailedAt: user.reminderState?.lastFailedAt ?? null,
         now,
       };
       // Cheap checks first, so the database is only asked for Assignments when a Reminder
@@ -87,11 +90,22 @@ export async function runReminderTick(
       }
       if (sent.sent + sent.removed + sent.failed === 0) continue; // no device registered
 
+      if (sent.sent === 0 && sent.failed > 0) {
+        // Nothing was accepted and at least one device failed transiently: try again after the
+        // retry delay, until the local day ends.
+        await prisma.reminderState.upsert({
+          where: { userId: user.id },
+          create: { userId: user.id, lastFailedAt: now },
+          update: { lastFailedAt: now },
+        });
+        continue;
+      }
+
       const today = localDate(now, user.timezone);
       await prisma.reminderState.upsert({
         where: { userId: user.id },
         create: { userId: user.id, lastSentLocalDate: today },
-        update: { lastSentLocalDate: today },
+        update: { lastSentLocalDate: today, lastFailedAt: null },
       });
       if (sent.sent > 0) result.delivered++;
     } catch (e) {

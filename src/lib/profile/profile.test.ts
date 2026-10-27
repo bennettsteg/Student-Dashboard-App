@@ -30,13 +30,13 @@ afterAll(async () => {
 });
 
 describe("profile", () => {
-  it("starts with reminders off, 08:00 and UTC, and the connected account's email", async () => {
+  it("starts with reminders off, 08:00 and America/Chicago, and the connected account's email", async () => {
     expect(await getProfile(USER_ID)).toEqual({
       name: null,
       email: EMAIL,
       program: null,
       termLabel: null,
-      timezone: "UTC",
+      timezone: "America/Chicago",
       reminderTime: "08:00",
       remindersEnabled: false,
     });

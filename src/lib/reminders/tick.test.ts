@@ -182,14 +182,35 @@ describe("runReminderTick", () => {
     expect(await lastSent()).toBe("2026-10-26");
   });
 
-  it("records the day when every send fails, so a push outage is not retried every tick", async () => {
-    await tick(EIGHT_AM, { [ENDPOINT_A]: 500, [ENDPOINT_B]: 503 });
-    expect(await lastSent()).toBe("2026-10-26");
+  it("retries every 15 minutes after every send fails, then records the day on success", async () => {
+    const outage = { [ENDPOINT_A]: 500, [ENDPOINT_B]: 503 };
+    const later = (minutes: number) => new Date(EIGHT_AM.getTime() + minutes * 60 * 1000);
 
-    const retry = await tick(NOON);
-    expect(retry.calls).toHaveLength(0);
-    // Failed (not gone) devices stay registered for tomorrow.
+    await tick(EIGHT_AM, outage);
+    expect(await lastSent()).toBeNull();
+
+    // Inside the retry delay nothing is attempted, even though the service is back.
+    expect((await tick(later(10))).calls).toHaveLength(0);
+
+    // Still down at 15 minutes: another failure, another wait.
+    await tick(later(15), outage);
+    expect((await tick(later(20))).calls).toHaveLength(0);
+
+    const retry = await tick(later(30));
+    expect(retry.calls).toHaveLength(2);
+    expect(await lastSent()).toBe("2026-10-26");
+    expect((await tick(later(60))).calls).toHaveLength(0);
+    // Failed (not gone) devices stayed registered throughout.
     expect(await prisma.pushSubscription.count({ where: { userId: USER } })).toBe(2);
+  });
+
+  it("stops retrying at local midnight and starts fresh the next day", async () => {
+    await tick(EIGHT_AM, { [ENDPOINT_A]: 500, [ENDPOINT_B]: 503 });
+    expect(await lastSent()).toBeNull();
+
+    // Next local day, 08:00 EDT: nothing due today any more, so nothing is sent.
+    const nextDay = new Date("2026-10-27T12:00:00Z");
+    expect((await tick(nextDay)).calls).toHaveLength(0);
   });
 
   it("does not resend to the devices that got it when another device fails", async () => {

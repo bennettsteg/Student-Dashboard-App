@@ -27,6 +27,8 @@ export interface NotificationDTO {
 
 export interface MailSyncStatusDTO {
   lastSuccessAt: string | null;
+  /** Pre-formatted in the profile timezone; null until a sync has stored new mail. */
+  lastNewMailLabel: string | null;
   lastError: string | null;
   needsReconnect: boolean;
 }
@@ -94,6 +96,11 @@ export function NotificationList({
         <div>
           <h1 className="text-3xl font-bold">Notifications</h1>
           <p className="mt-1 text-sm text-muted-foreground">{unreadCount} unread</p>
+          <p className="text-sm text-muted-foreground">
+            {sync.lastNewMailLabel
+              ? `Emails updated to: ${sync.lastNewMailLabel}`
+              : "No new emails synced yet"}
+          </p>
         </div>
         <Button
           type="button"

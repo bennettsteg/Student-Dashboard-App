@@ -20,7 +20,7 @@ export type ProfileParseResult = { ok: true; value: ProfileInput } | { ok: false
  * The timezone a new user starts with, until the student saves Settings. Mirrors the
  * `User.timezone` column default in `prisma/schema.prisma`.
  */
-export const DEFAULT_TIMEZONE = "UTC";
+export const DEFAULT_TIMEZONE = "America/Chicago";
 
 const MAX_TEXT_LENGTH = 100;
 

@@ -27,7 +27,7 @@ model User {
   // Free-text Term label shown in page headers and the Dashboard greeting; not an entity.
   termLabel        String?
   // IANA timezone name. Anchors "due today" and the Reminder time of day, wherever the server runs.
-  timezone         String  @default("UTC")
+  timezone         String  @default("America/Chicago")
   // Local wall-clock time of day (in `timezone`) for the daily Reminder, "HH:mm".
   reminderTime     String  @default("08:00")
   // Overall Reminder switch; per-device push subscriptions are separate and survive turning it off.
@@ -237,8 +237,12 @@ model PushSubscription {
 model ReminderState {
   userId            String @id
   // The user's local calendar date (YYYY-MM-DD, in their timezone at send time) that the last
-  // Reminder digest was sent for. The guard compares it with today's local date.
-  lastSentLocalDate String
+  // Reminder digest was sent for. The guard compares it with today's local date. Null while only
+  // failed attempts have been recorded.
+  lastSentLocalDate String?
+  // When the last attempt failed for a transient reason (no device accepted it). The guard waits
+  // before trying again; a later success or a new local day makes it irrelevant.
+  lastFailedAt      DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -249,6 +253,9 @@ model MailSyncState {
   // When the last sync that completed successfully finished. Drives the "last synced" display
   // and the 24-hour auto-sync guard.
   lastSuccessAt  DateTime?
+  // When the last successful sync stored at least one message not seen before. Drives the
+  // "Emails updated to" display, so it only moves when new mail actually arrives.
+  lastNewMailAt  DateTime?
   // When the last sync (successful or not) started. Drives the manual-sync cooldown.
   lastAttemptAt  DateTime?
   // Error message of the last attempt, or null if it succeeded.

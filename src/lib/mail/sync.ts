@@ -46,12 +46,13 @@ export async function runMailSync(
   try {
     const accessToken = await deps.getAccessToken(userId);
     const messages = await deps.fetchRecentMail(accessToken);
-    await storeMessages(userId, messages);
+    const newCount = await storeMessages(userId, messages);
 
     await prisma.mailSyncState.update({
       where: { userId },
       data: {
         lastSuccessAt: now,
+        ...(newCount > 0 ? { lastNewMailAt: now } : {}),
         lastError: null,
         needsReconnect: false,
         syncStartedAt: null,
@@ -120,7 +121,14 @@ async function claimSync(
   return { status: "already-running" };
 }
 
-async function storeMessages(userId: string, messages: GraphMailItem[]): Promise<void> {
+/** Upserts the messages and returns how many were not stored before. */
+async function storeMessages(userId: string, messages: GraphMailItem[]): Promise<number> {
+  const known = await prisma.notificationItem.findMany({
+    where: { userId, source: "EMAIL", externalId: { in: messages.map((m) => m.id) } },
+    select: { externalId: true },
+  });
+  const knownIds = new Set(known.map((item) => item.externalId));
+
   for (const message of messages) {
     const fields = {
       threadId: message.conversationId,
@@ -140,4 +148,5 @@ async function storeMessages(userId: string, messages: GraphMailItem[]): Promise
       create: { userId, source: "EMAIL", externalId: message.id, isRead: message.isRead, ...fields },
     });
   }
+  return messages.filter((m) => !knownIds.has(m.id)).length;
 }
