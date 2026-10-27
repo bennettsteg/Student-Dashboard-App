@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
-import { createAssignment, deleteAssignment, updateAssignment } from "@/server-actions/assignment-actions";
+import { createAssignment, updateAssignment } from "@/server-actions/assignment-actions";
 
 export interface CourseOption {
   id: string;
@@ -44,17 +44,18 @@ interface AssignmentFormProps {
   courses: CourseOption[];
   initialValues: AssignmentFormValues;
   onSaved: () => void;
-  /** When set, the assignment is always saved under this course — the course picker is hidden. */
-  lockedCourseId?: string;
 }
 
+/**
+ * The one add/edit form for an Assignment. Complete (delete) is deliberately not here: it
+ * lives on the list rows behind a confirmation.
+ */
 export function AssignmentForm({
   open,
   onOpenChange,
   courses,
   initialValues,
   onSaved,
-  lockedCourseId,
 }: AssignmentFormProps) {
   const [values, setValues] = useState(initialValues);
   const [submitting, setSubmitting] = useState(false);
@@ -75,7 +76,12 @@ export function AssignmentForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!values.courseId) {
+      setError("Choose a course.");
+      return;
+    }
     setSubmitting(true);
+    setError(null);
     try {
       // Resolve the wall-clock day/time to an absolute instant here, in the
       // browser's own timezone, before it crosses to the server — a naive
@@ -85,16 +91,10 @@ export function AssignmentForm({
       const [year, month, day] = values.day.split("-").map(Number);
       const [hours, minutes] = values.time.split(":").map(Number);
       const due = new Date(year, month - 1, day, hours, minutes);
-      const courseId = lockedCourseId ?? values.courseId;
-      if (!courseId) {
-        setError("Choose a course.");
-        return;
-      }
-      setError(null);
       const input = {
         title: values.title,
         notes: values.notes.trim() || null,
-        courseId,
+        courseId: values.courseId,
         dueAt: due.toISOString(),
       };
       if (isEdit && initialValues.id) {
@@ -104,18 +104,8 @@ export function AssignmentForm({
       }
       onSaved();
       onOpenChange(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!initialValues.id) return;
-    setSubmitting(true);
-    try {
-      await deleteAssignment(initialValues.id);
-      onSaved();
-      onOpenChange(false);
+    } catch {
+      setError("Couldn't save this assignment. Check the details and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -125,7 +115,7 @@ export function AssignmentForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit assignment" : "New assignment"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit assignment" : "Add assignment"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -138,30 +128,29 @@ export function AssignmentForm({
             />
           </div>
 
-          {!lockedCourseId && (
-            <div className="space-y-1.5">
-              <Label htmlFor="assignment-course">Course</Label>
-              <Select
-                value={values.courseId || null}
-                onValueChange={(courseId) => setValues({ ...values, courseId: courseId ?? "" })}
-              >
-                <SelectTrigger id="assignment-course" className="w-full">
-                  <SelectValue placeholder="Choose a course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="assignment-course">Course</Label>
+            <Select
+              value={values.courseId || null}
+              items={courses.map((course) => ({ value: course.id, label: course.name }))}
+              onValueChange={(courseId) => setValues({ ...values, courseId: courseId ?? "" })}
+            >
+              <SelectTrigger id="assignment-course" className="w-full">
+                <SelectValue placeholder="Choose a course" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="assignment-day">Day</Label>
+              <Label htmlFor="assignment-day">Due date</Label>
               <Input
                 id="assignment-day"
                 type="date"
@@ -171,7 +160,7 @@ export function AssignmentForm({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="assignment-time-hours">Time</Label>
+              <Label htmlFor="assignment-time-hours">Due time</Label>
               <TimeInput
                 id="assignment-time"
                 required
@@ -192,21 +181,12 @@ export function AssignmentForm({
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <DialogFooter className="flex items-center gap-2 sm:justify-between">
-            {isEdit ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={submitting}
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-            ) : (
-              <span />
-            )}
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={submitting} onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={submitting}>
-              {isEdit ? "Save" : "Create"}
+              {isEdit ? "Save" : "Add assignment"}
             </Button>
           </DialogFooter>
         </form>

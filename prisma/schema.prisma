@@ -21,6 +21,18 @@ model User {
   emailVerified DateTime?
   image         String?
 
+  // Profile and reminder preferences (Settings). The email above is the connected Microsoft
+  // account's and is read-only in the app.
+  program          String?
+  // Free-text Term label shown in page headers and the Dashboard greeting; not an entity.
+  termLabel        String?
+  // IANA timezone name. Anchors "due today" and the Reminder time of day, wherever the server runs.
+  timezone         String  @default("UTC")
+  // Local wall-clock time of day (in `timezone`) for the daily Reminder, "HH:mm".
+  reminderTime     String  @default("08:00")
+  // Overall Reminder switch; per-device push subscriptions are separate and survive turning it off.
+  remindersEnabled Boolean @default(false)
+
   accounts      Account[]
   sessions      Session[]
   courses       Course[]
