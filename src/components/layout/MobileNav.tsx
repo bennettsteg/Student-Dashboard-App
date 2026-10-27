@@ -63,7 +63,7 @@ export function MobileNav({ unreadCount }: { unreadCount: number }) {
 
       <nav
         aria-label="Sections"
-        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)]"
+        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-sidebar-border bg-sidebar pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
       >
         {PHONE_TABS.map((item) => {
           const active = isNavActive(pathname, item.href);
