@@ -1,42 +1,40 @@
+import {
+  SCHEDULE_END_HOUR,
+  SCHEDULE_START_HOUR,
+  formatHourLabel,
+  formatTimeOfDay,
+  layoutDay,
+} from "@/lib/schedule/layout";
+
 import type { CourseScheduleDTO } from "./types";
 
 export type { CourseScheduleDTO } from "./types";
 
 const DAYS = [
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
+  { value: 1, label: "Monday", short: "Mon" },
+  { value: 2, label: "Tuesday", short: "Tue" },
+  { value: 3, label: "Wednesday", short: "Wed" },
+  { value: 4, label: "Thursday", short: "Thu" },
+  { value: 5, label: "Friday", short: "Fri" },
 ];
 
-const HOUR_START = 7; // 7 AM
-const HOUR_END = 22; // 10 PM
 const HOURS = Array.from(
-  { length: HOUR_END - HOUR_START + 1 },
-  (_, i) => HOUR_START + i,
+  { length: SCHEDULE_END_HOUR - SCHEDULE_START_HOUR + 1 },
+  (_, i) => SCHEDULE_START_HOUR + i,
 );
-const ROW_HEIGHT = 48; // px per hour
-const GRID_HEIGHT = (HOUR_END - HOUR_START) * ROW_HEIGHT;
+const ROW_HEIGHT = 56; // px per hour
+const GRID_HEIGHT = (SCHEDULE_END_HOUR - SCHEDULE_START_HOUR) * ROW_HEIGHT;
+const COLUMNS = "56px repeat(5, minmax(0, 1fr))";
 
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
+function courseTitle(course: CourseScheduleDTO): string {
+  return course.code ? `${course.name} (${course.code})` : course.name;
 }
 
-function formatHour(hour: number): string {
-  const period = hour < 12 || hour === 24 ? "AM" : "PM";
-  const display = hour % 12 === 0 ? 12 : hour % 12;
-  return `${display} ${period}`;
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":").map(Number);
-  const period = hours < 12 ? "AM" : "PM";
-  const display = hours % 12 === 0 ? 12 : hours % 12;
-  return `${display}:${String(minutes).padStart(2, "0")} ${period}`;
-}
-
+/**
+ * Read-only Monday-Friday week grid of Courses, 7 AM-10 PM, colour-coded by Course. A Course
+ * without a colour falls back to the theme's primary. Phones get a per-day list instead of
+ * the grid, which is too narrow to read there.
+ */
 export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
   return (
     <div className="flex flex-col gap-3">
@@ -44,111 +42,108 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
         {DAYS.map((day) => {
           const dayCourses = courses
             .filter((course) => course.daysOfWeek.includes(day.value))
-            .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
           return (
-            <div key={day.value} className="rounded-xl border border-border bg-card p-3">
-              <div className="mb-2 text-sm font-medium">{day.label}</div>
+            <section key={day.value} className="rounded-xl border border-border bg-card p-3">
+              <h2 className="mb-2 text-sm font-semibold">{day.label}</h2>
               {dayCourses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No classes</p>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {dayCourses.map((course) => (
-                    <li key={course.id}>
-                      <div
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-white"
-                        style={{ backgroundColor: course.color ?? "var(--primary)" }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">
-                            {course.name}
-                            {course.code ? ` (${course.code})` : ""}
-                          </div>
-                          {course.location && (
-                            <div className="truncate text-xs opacity-90">{course.location}</div>
-                          )}
-                        </div>
-                        <div className="shrink-0 text-xs opacity-90">
-                          {formatTime(course.startTime)} – {formatTime(course.endTime)}
-                        </div>
+                    <li
+                      key={course.id}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground"
+                      style={{ backgroundColor: course.color ?? "var(--primary)" }}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{courseTitle(course)}</div>
+                        {course.location && (
+                          <div className="truncate text-xs opacity-90">{course.location}</div>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-xs opacity-90">
+                        {formatTimeOfDay(course.startTime)} – {formatTimeOfDay(course.endTime)}
                       </div>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
+            </section>
           );
         })}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+      <div className="hidden max-h-[calc(100dvh-10rem)] overflow-auto rounded-xl border border-border bg-card md:block">
         <div className="min-w-[640px]">
-          <div className="grid" style={{ gridTemplateColumns: "60px repeat(5, 1fr)" }}>
+          <div
+            className="sticky top-0 z-10 grid border-b border-border bg-card"
+            style={{ gridTemplateColumns: COLUMNS }}
+          >
             <div />
             {DAYS.map((day) => (
               <div
                 key={day.value}
-                className="border-l border-border py-2 text-center text-sm font-medium"
+                className="border-l border-border py-2.5 text-center text-sm font-medium text-muted-foreground"
               >
-                {day.label}
+                {day.short}
               </div>
             ))}
           </div>
-          <div className="grid" style={{ gridTemplateColumns: "60px repeat(5, 1fr)" }}>
-            <div className="relative" style={{ height: GRID_HEIGHT }}>
+          <div className="grid" style={{ gridTemplateColumns: COLUMNS }}>
+            <div className="relative" style={{ height: GRID_HEIGHT + 16 }}>
               {HOURS.map((hour) => (
                 <div
                   key={hour}
                   className="absolute right-2 -translate-y-1/2 text-xs text-muted-foreground"
-                  style={{ top: (hour - HOUR_START) * ROW_HEIGHT }}
+                  style={{ top: (hour - SCHEDULE_START_HOUR) * ROW_HEIGHT + 8 }}
                 >
-                  {formatHour(hour)}
+                  {formatHourLabel(hour)}
                 </div>
               ))}
             </div>
-            {DAYS.map((day) => (
-              <div
-                key={day.value}
-                className="relative border-l border-border"
-                style={{ height: GRID_HEIGHT }}
-              >
-                {HOURS.map((hour) => (
-                  <div
-                    key={hour}
-                    className="absolute inset-x-0 border-t border-border/50"
-                    style={{ top: (hour - HOUR_START) * ROW_HEIGHT }}
-                  />
-                ))}
-                {courses
-                  .filter((course) => course.daysOfWeek.includes(day.value))
-                  .map((course) => {
-                    const startMin = Math.max(
-                      timeToMinutes(course.startTime),
-                      HOUR_START * 60,
-                    );
-                    const endMin = Math.min(timeToMinutes(course.endTime), HOUR_END * 60);
-                    const top = ((startMin - HOUR_START * 60) / 60) * ROW_HEIGHT;
-                    const height = Math.max(
-                      ((endMin - startMin) / 60) * ROW_HEIGHT,
-                      20,
-                    );
+            {DAYS.map((day) => {
+              const dayCourses = courses.filter((course) => course.daysOfWeek.includes(day.value));
+              const byId = new Map(dayCourses.map((course) => [course.id, course]));
+              return (
+                <div
+                  key={day.value}
+                  className="relative border-l border-border"
+                  style={{ height: GRID_HEIGHT + 16 }}
+                >
+                  {HOURS.map((hour) => (
+                    <div
+                      key={hour}
+                      className="absolute inset-x-0 border-t border-border/60"
+                      style={{ top: (hour - SCHEDULE_START_HOUR) * ROW_HEIGHT + 8 }}
+                    />
+                  ))}
+                  {layoutDay(dayCourses, ROW_HEIGHT).map((block) => {
+                    const course = byId.get(block.id)!;
+                    const width = 100 / block.columns;
                     return (
                       <div
-                        key={course.id}
-                        className="absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white"
-                        style={{ top, height, backgroundColor: course.color ?? "var(--primary)" }}
+                        key={block.id}
+                        className="absolute overflow-hidden rounded-md px-2 py-1 text-xs text-primary-foreground"
+                        style={{
+                          top: block.top + 8,
+                          height: block.height,
+                          left: `calc(${block.column * width}% + 2px)`,
+                          width: `calc(${width}% - 4px)`,
+                          backgroundColor: course.color ?? "var(--primary)",
+                        }}
+                        title={`${courseTitle(course)}, ${formatTimeOfDay(course.startTime)} – ${formatTimeOfDay(course.endTime)}`}
                       >
-                        <div className="truncate font-medium">
-                          {course.name}
-                          {course.code ? ` (${course.code})` : ""}
-                        </div>
+                        <div className="truncate font-medium">{courseTitle(course)}</div>
                         {course.location && (
                           <div className="truncate opacity-90">{course.location}</div>
                         )}
                       </div>
                     );
                   })}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

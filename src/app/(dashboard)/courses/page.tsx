@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { currentGradesByCourse } from "@/lib/grades/store";
 import { requireUserId } from "@/lib/session";
 import { CoursesView } from "@/components/courses/CoursesView";
 import type { CourseCardDTO } from "@/components/courses/types";
@@ -7,6 +8,7 @@ export default async function CoursesPage() {
   const userId = await requireUserId();
   const now = new Date();
 
+  const grades = await currentGradesByCourse(userId);
   const courses = await prisma.course.findMany({
     where: { userId },
     orderBy: { name: "asc" },
@@ -34,6 +36,7 @@ export default async function CoursesPage() {
     color: course.color,
     openAssignments: course._count.assignments,
     nextDueAt: course.assignments[0]?.dueAt.toISOString() ?? null,
+    currentGrade: grades[course.id] ?? null,
   }));
 
   return <CoursesView courses={cards} />;

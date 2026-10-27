@@ -23,7 +23,10 @@ export default async function SchedulePage() {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4">
-      <h1 className="text-2xl">Schedule</h1>
+      <div>
+        <h1 className="text-2xl">Schedule</h1>
+        <p className="text-sm text-muted-foreground">Weekly class times</p>
+      </div>
       <ScheduleGrid courses={courseDTOs} />
     </div>
   );

@@ -14,4 +14,6 @@ export interface CourseCardDTO extends CourseScheduleDTO {
   openAssignments: number;
   /** ISO instant of the earliest Assignment not yet past due, or null. */
   nextDueAt: string | null;
+  /** Current Grade as a percentage, or null until the Course has a Grade Entry. */
+  currentGrade: number | null;
 }
