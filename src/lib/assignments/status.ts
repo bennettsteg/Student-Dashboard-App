@@ -11,7 +11,7 @@ const DUE_SOON_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
 /** The calendar date (`YYYY-MM-DD`) that `instant` falls on in `timeZone`. */
-function localDate(instant: Date, timeZone: string): string {
+export function localDate(instant: Date, timeZone: string): string {
   let formatter = formatters.get(timeZone);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat("en-CA", {
