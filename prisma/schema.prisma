@@ -39,6 +39,7 @@ model User {
   assignments       Assignment[]
   notifications     NotificationItem[]
   mailSyncState     MailSyncState?
+  reminderState     ReminderState?
   links             Link[]
   pushSubscriptions PushSubscription[]
 }
@@ -229,6 +230,17 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Per-user Reminder bookkeeping, written by the worker's reminder tick. Persisted (not kept in
+// memory) so a worker restart can never send a second Reminder in one local day.
+model ReminderState {
+  userId            String @id
+  // The user's local calendar date (YYYY-MM-DD, in their timezone at send time) that the last
+  // Reminder digest was sent for. The guard compares it with today's local date.
+  lastSentLocalDate String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Per-user Mail Sync bookkeeping. Written by every sync, manual or automatic (ADR-0002).

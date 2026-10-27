@@ -1,45 +1,66 @@
-// Long-running background worker. Its only job today is the automatic Mail Sync (ADR-0002);
-// the daily Reminder digest will be added alongside it. Blackboard sync was removed (ADR-0001).
+// Long-running background worker. It does exactly two things: the automatic Mail Sync
+// (ADR-0002) and the daily Reminder digest. Blackboard sync was removed (ADR-0001).
 //
-// Run exactly ONE instance. The guard state is persisted, so a restart never causes an extra
-// sync, but two instances ticking at once would each evaluate the guard and could both sync.
+// Run exactly ONE instance. All guard state is persisted, so a restart never causes an extra
+// sync or a second Reminder, but two instances ticking at once would each evaluate the guards
+// and could both sync or both push.
 //
-// The schedule is an hourly tick that asks the database "is a sync due?" (see
-// src/lib/mail/autoSyncGuard.ts); there is no sleep-until-tomorrow loop to drift or double-fire.
+// Both jobs are ticks that ask the database "is one due?" (src/lib/mail/autoSyncGuard.ts and
+// src/lib/reminders/guard.ts); there is no sleep-until-tomorrow loop to drift or double-fire.
+//  - mail: hourly, at most one Graph call per user per 24 hours.
+//  - reminders: every few minutes, reads only the local database (and sends the push).
 
 import { runMailAutoSyncTick } from "@/lib/mail/autoSync";
+import { runReminderTick } from "@/lib/reminders/tick";
 
-const TICK_MS = 60 * 60 * 1000;
+const MAIL_TICK_MS = 60 * 60 * 1000;
+const REMINDER_TICK_MS = 5 * 60 * 1000;
 
-let ticking = false;
-
-async function tick() {
-  // Never let a slow tick overlap the next one.
-  if (ticking) return;
-  ticking = true;
-  try {
-    const r = await runMailAutoSyncTick();
-    console.log(
-      `[worker] mail tick: ${r.checked} user(s) checked, ${r.started} due, ` +
-        `${r.synced} synced, ${r.failed} failed`,
-    );
-  } catch (e) {
-    // The tick itself failing (e.g. database unreachable) is just retried next hour.
-    console.error("[worker] mail tick failed:", e instanceof Error ? e.message : e);
-  } finally {
-    ticking = false;
-  }
+/**
+ * Wraps a tick so a slow run never overlaps the next one, and a failing tick (e.g. database
+ * unreachable) is logged and simply retried on the next interval.
+ */
+function guardedTick(name: string, run: () => Promise<string>) {
+  let ticking = false;
+  return async () => {
+    if (ticking) return;
+    ticking = true;
+    try {
+      console.log(`[worker] ${name} tick: ${await run()}`);
+    } catch (e) {
+      console.error(`[worker] ${name} tick failed:`, e instanceof Error ? e.message : e);
+    } finally {
+      ticking = false;
+    }
+  };
 }
 
-console.log(`[worker] started; mail auto-sync ticks every ${TICK_MS / 60_000} minutes.`);
+const mailTick = guardedTick("mail", async () => {
+  const r = await runMailAutoSyncTick();
+  return `${r.checked} user(s) checked, ${r.started} due, ${r.synced} synced, ${r.failed} failed`;
+});
 
-// Tick once at startup: harmless after a restart because the guard reads persisted state.
-void tick();
-const interval = setInterval(() => void tick(), TICK_MS);
+const reminderTick = guardedTick("reminder", async () => {
+  const r = await runReminderTick();
+  return `${r.checked} user(s) checked, ${r.due} due, ${r.delivered} delivered, ${r.errors} error(s)`;
+});
+
+console.log(
+  `[worker] started; mail auto-sync ticks every ${MAIL_TICK_MS / 60_000} minutes, ` +
+    `reminders every ${REMINDER_TICK_MS / 60_000} minutes.`,
+);
+
+// Tick once at startup: harmless after a restart because the guards read persisted state.
+void mailTick();
+void reminderTick();
+const intervals = [
+  setInterval(() => void mailTick(), MAIL_TICK_MS),
+  setInterval(() => void reminderTick(), REMINDER_TICK_MS),
+];
 
 function shutdown(signal: string) {
   console.log(`[worker] received ${signal}, shutting down.`);
-  clearInterval(interval);
+  for (const interval of intervals) clearInterval(interval);
   process.exit(0);
 }
 
