@@ -1,9 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-import { CourseEditForm } from "./CourseEditForm";
 import type { CourseScheduleDTO } from "./types";
 
 export type { CourseScheduleDTO } from "./types";
@@ -44,15 +38,6 @@ function formatTime(time: string): string {
 }
 
 export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
-  const router = useRouter();
-  const [editingCourse, setEditingCourse] = useState<CourseScheduleDTO | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  function openEdit(course: CourseScheduleDTO) {
-    setEditingCourse(course);
-    setDialogOpen(true);
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 md:hidden">
@@ -69,10 +54,8 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                 <ul className="flex flex-col gap-2">
                   {dayCourses.map((course) => (
                     <li key={course.id}>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(course)}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-white hover:brightness-110"
+                      <div
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-white"
                         style={{ backgroundColor: course.color ?? "var(--primary)" }}
                       >
                         <div className="min-w-0 flex-1">
@@ -87,7 +70,7 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                         <div className="shrink-0 text-xs opacity-90">
                           {formatTime(course.startTime)} – {formatTime(course.endTime)}
                         </div>
-                      </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -149,11 +132,9 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                       20,
                     );
                     return (
-                      <button
+                      <div
                         key={course.id}
-                        type="button"
-                        onClick={() => openEdit(course)}
-                        className="absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white hover:brightness-110"
+                        className="absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white"
                         style={{ top, height, backgroundColor: course.color ?? "var(--primary)" }}
                       >
                         <div className="truncate font-medium">
@@ -163,7 +144,7 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
                         {course.location && (
                           <div className="truncate opacity-90">{course.location}</div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
               </div>
@@ -171,13 +152,6 @@ export function ScheduleGrid({ courses }: { courses: CourseScheduleDTO[] }) {
           </div>
         </div>
       </div>
-
-      <CourseEditForm
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        course={editingCourse}
-        onSaved={() => router.refresh()}
-      />
     </div>
   );
 }

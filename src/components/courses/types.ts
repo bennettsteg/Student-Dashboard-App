@@ -8,3 +8,10 @@ export interface CourseScheduleDTO {
   endTime: string; // "HH:mm"
   color: string | null;
 }
+
+export interface CourseCardDTO extends CourseScheduleDTO {
+  instructor: string | null;
+  openAssignments: number;
+  /** ISO instant of the earliest Assignment not yet past due, or null. */
+  nextDueAt: string | null;
+}

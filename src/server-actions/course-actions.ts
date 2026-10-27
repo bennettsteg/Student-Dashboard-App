@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
+import { courseDropImpact, dropCourse, type CourseDropImpact } from "@/lib/courses/drop";
 import { resolveUserId } from "@/lib/session";
 
 const COURSE_COLORS = [
@@ -17,6 +18,7 @@ const COURSE_COLORS = [
 export interface CourseInput {
   name: string;
   code?: string | null;
+  instructor?: string | null;
   location?: string | null;
   daysOfWeek: number[];
   startTime: string; // "HH:mm"
@@ -42,6 +44,7 @@ export async function createCourse(input: CourseInput) {
       userId,
       name: input.name,
       code: input.code || null,
+      instructor: input.instructor?.trim() || null,
       location: input.location || null,
       daysOfWeek: input.daysOfWeek,
       startTime: input.startTime,
@@ -64,6 +67,7 @@ export async function updateCourse(id: string, input: CourseInput) {
     data: {
       name: input.name,
       code: input.code || null,
+      instructor: input.instructor?.trim() || null,
       location: input.location || null,
       daysOfWeek: input.daysOfWeek,
       startTime: input.startTime,
@@ -77,20 +81,20 @@ export async function updateCourse(id: string, input: CourseInput) {
   revalidatePath("/");
 }
 
-export async function deleteCourse(id: string) {
-  await deleteCourses([id]);
+/** What dropping this Course would also delete, for the drop confirmation. */
+export async function getCourseDropImpact(id: string): Promise<CourseDropImpact | null> {
+  const userId = await requireUserId();
+  return courseDropImpact(userId, id);
 }
 
-export async function deleteCourses(ids: string[]) {
-  if (ids.length === 0) return;
+/** Drops a Course; its Assignments are deleted with it. */
+export async function deleteCourse(id: string) {
   const userId = await requireUserId();
-
-  // Assignment.courseId is onDelete: Cascade, so dropping a Course also deletes its
-  // Assignments in the same statement.
-  await prisma.course.deleteMany({ where: { id: { in: ids }, userId } });
+  await dropCourse(userId, id);
 
   revalidatePath("/schedule");
   revalidatePath("/courses");
   revalidatePath("/assignments");
+  revalidatePath("/calendar");
   revalidatePath("/");
 }
