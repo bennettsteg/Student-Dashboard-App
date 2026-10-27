@@ -97,15 +97,7 @@ The stored Microsoft `Account` row (and its refresh token) survives the address 
 
 ## Verification checklist
 
-These checks need real devices and the real tailnet, so they have to be done by hand:
-
-- [ ] **Desktop, Tailscale on:** `https://<host>.<tailnet>.ts.net` loads the dashboard with a valid certificate (padlock, no warning).
-- [ ] **Phone, Tailscale on:** the same URL loads in Safari with a valid certificate.
-- [ ] **Connect Microsoft:** at the HTTPS address, Settings → Connect Microsoft account completes and returns to the app, and "Sync mail" works afterwards.
-- [ ] **Phone, Tailscale off, on cellular:** the URL does not load (the name doesn't resolve or the connection fails).
-- [ ] **LAN device not on Tailscale:** `curl -m 5 http://<server-lan-ip>:3000` fails (connection refused or timeout), and `https://<server-lan-ip>` does not serve the app.
-- [ ] **On the server:** `ss -ltnp | grep 3000` shows the port bound to `127.0.0.1` only, not `0.0.0.0`/`*`.
-- [ ] **On the server:** `tailscale serve status` says "tailnet only", and `tailscale funnel status` shows no Funnel.
+These checks need real devices and the real tailnet, so they are done by hand. The list (valid certificate on desktop and phone, Connect Microsoft over HTTPS, unreachable off the tailnet, port bound to loopback only, Funnel off) is section 1 of [manual-verification.md](manual-verification.md), where results are recorded.
 
 ## Troubleshooting
 
