@@ -62,13 +62,14 @@ export function searchDashboard(
   for (const assignment of assignments) {
     const title = assignment.title.toLowerCase();
     if (!title.includes(needle)) continue;
+    const courseName = courseById.get(assignment.courseId)?.name;
     candidates.push({
       startsWith: title.startsWith(needle),
       result: {
         kind: "assignment",
         id: assignment.id,
         title: assignment.title,
-        subtitle: courseById.get(assignment.courseId)?.name ?? "Assignment",
+        subtitle: courseName ? `Assignment · ${courseName}` : "Assignment",
         href: `/assignments?course=${assignment.courseId}&assignment=${assignment.id}`,
       },
     });

@@ -28,7 +28,7 @@ describe("searchDashboard", () => {
         kind: "assignment",
         id: "a1",
         title: "Responsive layout lab",
-        subtitle: "Web Applications",
+        subtitle: "Assignment · Web Applications",
         href: "/assignments?course=c1&assignment=a1",
       },
     ]);
@@ -85,8 +85,9 @@ describe("searchDashboard", () => {
     expect(searchDashboard("reading", many, courses, 5)).toHaveLength(5);
   });
 
-  it("shows a dash-free subtitle when an Assignment's Course is unknown", () => {
+  it("labels an Assignment with no known Course on its own", () => {
     const results = searchDashboard("orphan", [{ id: "o", title: "Orphan task", courseId: "gone" }], courses);
     expect(results[0].subtitle).toBe("Assignment");
+    expect(results[0].href).toBe("/assignments?course=gone&assignment=o");
   });
 });
