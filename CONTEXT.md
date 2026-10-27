@@ -54,9 +54,17 @@ _Avoid_: Mail refresh, mail poll
 
 ### Navigation
 
+**Dashboard**:
+The home page: summary cards, the next due Assignments, recent Notifications, the week ahead and each Course's Current Grade.
+_Avoid_: Home, overview
+
 **Schedule**:
 The weekly timetable of when each Course meets.
 _Avoid_: Timetable
+
+**Calendar**:
+A month grid of when open Assignments are due. It is not the Schedule.
+_Avoid_: Planner
 
 **Links**:
 The student's saved shortcuts to external sites such as the school portal.
