@@ -14,9 +14,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimeInput } from "@/components/ui/time-input";
-import { deleteCourse, updateCourse } from "@/server-actions/course-actions";
+import { createCourse, updateCourse } from "@/server-actions/course-actions";
 
-import type { CourseScheduleDTO } from "./types";
+import type { CourseCardDTO } from "./types";
 
 const DAYS = [
   { value: 1, label: "Mon" },
@@ -26,28 +26,32 @@ const DAYS = [
   { value: 5, label: "Fri" },
 ];
 
-interface CourseEditFormValues {
+interface CourseFormValues {
   name: string;
   code: string;
+  instructor: string;
   location: string;
   daysOfWeek: number[];
   startTime: string;
   endTime: string;
 }
 
-const emptyValues: CourseEditFormValues = {
+const emptyValues: CourseFormValues = {
   name: "",
   code: "",
+  instructor: "",
   location: "",
   daysOfWeek: [],
   startTime: "09:00",
   endTime: "10:00",
 };
 
-function toValues(course: CourseScheduleDTO): CourseEditFormValues {
+function toValues(course: CourseCardDTO | null): CourseFormValues {
+  if (!course) return emptyValues;
   return {
     name: course.name,
     code: course.code ?? "",
+    instructor: course.instructor ?? "",
     location: course.location ?? "",
     daysOfWeek: course.daysOfWeek,
     startTime: course.startTime,
@@ -55,24 +59,26 @@ function toValues(course: CourseScheduleDTO): CourseEditFormValues {
   };
 }
 
-interface CourseEditFormProps {
+interface CourseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  course: CourseScheduleDTO | null;
+  /** The Course being edited, or null to add a new one. */
+  course: CourseCardDTO | null;
   onSaved: () => void;
 }
 
-export function CourseEditForm({ open, onOpenChange, course, onSaved }: CourseEditFormProps) {
-  const [values, setValues] = useState<CourseEditFormValues>(emptyValues);
+/** The one add/edit form for Courses. Courses are managed only from the Courses section. */
+export function CourseFormDialog({ open, onOpenChange, course, onSaved }: CourseFormDialogProps) {
+  const [values, setValues] = useState<CourseFormValues>(emptyValues);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [prevOpen, setPrevOpen] = useState(open);
 
-  // Reset local state each time the dialog transitions from closed to open,
-  // picking up whichever course was just clicked.
+  // Reset local state each time the dialog transitions from closed to open, picking up
+  // whichever Course (or none) it was opened for.
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open && course) {
+    if (open) {
       setValues(toValues(course));
       setError(null);
     }
@@ -89,7 +95,6 @@ export function CourseEditForm({ open, onOpenChange, course, onSaved }: CourseEd
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!course) return;
     if (!values.name.trim() || values.daysOfWeek.length === 0) {
       setError("Enter a course name and pick at least one day.");
       return;
@@ -101,27 +106,17 @@ export function CourseEditForm({ open, onOpenChange, course, onSaved }: CourseEd
     setError(null);
     setSubmitting(true);
     try {
-      await updateCourse(course.id, {
-        name: values.name,
-        code: values.code || null,
-        location: values.location || null,
+      const input = {
+        name: values.name.trim(),
+        code: values.code.trim() || null,
+        instructor: values.instructor.trim() || null,
+        location: values.location.trim() || null,
         daysOfWeek: values.daysOfWeek,
         startTime: values.startTime,
         endTime: values.endTime,
-      });
-      onSaved();
-      onOpenChange(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!course) return;
-    if (!confirm("Remove this course? This also removes it from any assignments.")) return;
-    setSubmitting(true);
-    try {
-      await deleteCourse(course.id);
+      };
+      if (course) await updateCourse(course.id, input);
+      else await createCourse(input);
       onSaved();
       onOpenChange(false);
     } finally {
@@ -133,51 +128,64 @@ export function CourseEditForm({ open, onOpenChange, course, onSaved }: CourseEd
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit course</DialogTitle>
+          <DialogTitle>{course ? "Edit course" : "Add course"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="edit-course-name">Course name</Label>
+            <Label htmlFor="course-name">Course name</Label>
             <Input
-              id="edit-course-name"
+              id="course-name"
               required
               value={values.name}
+              placeholder="e.g. Web Applications"
               onChange={(e) => setValues({ ...values, name: e.target.value })}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-course-code">Code (optional)</Label>
-            <Input
-              id="edit-course-code"
-              value={values.code}
-              onChange={(e) => setValues({ ...values, code: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="course-code">Code (optional)</Label>
+              <Input
+                id="course-code"
+                value={values.code}
+                placeholder="e.g. CS 201"
+                onChange={(e) => setValues({ ...values, code: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="course-instructor">Instructor</Label>
+              <Input
+                id="course-instructor"
+                value={values.instructor}
+                onChange={(e) => setValues({ ...values, instructor: e.target.value })}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-course-location">Location</Label>
+            <Label htmlFor="course-location">Location</Label>
             <Input
-              id="edit-course-location"
+              id="course-location"
               value={values.location}
+              placeholder="e.g. Ferguson 201"
               onChange={(e) => setValues({ ...values, location: e.target.value })}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-course-start-hours">Start time</Label>
+              <Label htmlFor="course-start-hours">Start time</Label>
               <TimeInput
-                id="edit-course-start"
+                id="course-start"
                 required
                 value={values.startTime}
                 onChange={(startTime) => setValues({ ...values, startTime })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-course-end-hours">End time</Label>
+              <Label htmlFor="course-end-hours">End time</Label>
               <TimeInput
-                id="edit-course-end"
+                id="course-end"
                 required
                 value={values.endTime}
                 onChange={(endTime) => setValues({ ...values, endTime })}
@@ -190,23 +198,20 @@ export function CourseEditForm({ open, onOpenChange, course, onSaved }: CourseEd
             {DAYS.map((day) => (
               <div key={day.value} className="flex items-center gap-1.5">
                 <Checkbox
-                  id={`edit-day-${day.value}`}
+                  id={`course-day-${day.value}`}
                   checked={values.daysOfWeek.includes(day.value)}
                   onCheckedChange={(checked) => toggleDay(day.value, checked === true)}
                 />
-                <Label htmlFor={`edit-day-${day.value}`}>{day.label}</Label>
+                <Label htmlFor={`course-day-${day.value}`}>{day.label}</Label>
               </div>
             ))}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <DialogFooter className="flex items-center gap-2 sm:justify-between">
-            <Button type="button" variant="destructive" disabled={submitting} onClick={handleDelete}>
-              Delete
-            </Button>
+          <DialogFooter>
             <Button type="submit" disabled={submitting}>
-              Save
+              {course ? "Save" : "Add course"}
             </Button>
           </DialogFooter>
         </form>
