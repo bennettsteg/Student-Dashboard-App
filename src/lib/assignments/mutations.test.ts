@@ -20,9 +20,9 @@ const due = "2026-10-30T03:59:00.000Z";
 beforeAll(async () => {
   await prisma.user.create({ data: { id: ME } });
   await prisma.user.create({ data: { id: OTHER } });
-  myCourse = (await prisma.course.create({ data: { userId: ME, name: "Web Applications", startTime: "09:00", endTime: "10:00" } })).id;
-  myOtherCourse = (await prisma.course.create({ data: { userId: ME, name: "Databases", startTime: "09:00", endTime: "10:00" } })).id;
-  theirCourse = (await prisma.course.create({ data: { userId: OTHER, name: "Theirs", startTime: "09:00", endTime: "10:00" } })).id;
+  myCourse = (await prisma.course.create({ data: { userId: ME, name: "Web Applications", daysOfWeek: [1], startTime: "09:00", endTime: "10:00" } })).id;
+  myOtherCourse = (await prisma.course.create({ data: { userId: ME, name: "Databases", daysOfWeek: [1], startTime: "09:00", endTime: "10:00" } })).id;
+  theirCourse = (await prisma.course.create({ data: { userId: OTHER, name: "Theirs", daysOfWeek: [1], startTime: "09:00", endTime: "10:00" } })).id;
 });
 
 afterAll(async () => {
