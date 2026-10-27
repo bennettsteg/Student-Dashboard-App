@@ -5,16 +5,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 
-export interface CalendarEventInput {
+export interface AssignmentInput {
   title: string;
-  description?: string | null;
-  location?: string | null;
-  start: string; // ISO datetime
-  end: string; // ISO datetime
-  allDay: boolean;
-  courseId?: string | null;
-  isAssignment: boolean;
-  dueAt?: string | null; // ISO datetime
+  notes?: string | null;
+  courseId: string;
+  dueAt: string; // ISO datetime
 }
 
 async function requireUserId() {
@@ -25,62 +20,61 @@ async function requireUserId() {
   return userId;
 }
 
-export async function createEvent(input: CalendarEventInput) {
-  const userId = await requireUserId();
+function revalidateAssignmentPages() {
+  revalidatePath("/");
+  revalidatePath("/assignments");
+  revalidatePath("/calendar");
+  revalidatePath("/courses");
+}
 
-  await prisma.calendarEvent.create({
+/** Every Assignment belongs to one of the user's own Courses. */
+async function requireOwnCourse(userId: string, courseId: string) {
+  const course = await prisma.course.findFirst({ where: { id: courseId, userId } });
+  if (!course) {
+    throw new Error("Choose a course for this assignment.");
+  }
+}
+
+export async function createAssignment(input: AssignmentInput) {
+  const userId = await requireUserId();
+  await requireOwnCourse(userId, input.courseId);
+
+  await prisma.assignment.create({
     data: {
       userId,
-      courseId: input.courseId || null,
+      courseId: input.courseId,
       title: input.title,
-      description: input.description || null,
-      location: input.location || null,
-      startAt: new Date(input.start),
-      endAt: new Date(input.end),
-      allDay: input.allDay,
-      source: "MANUAL",
-      isAssignment: input.isAssignment,
-      dueAt: input.isAssignment && input.dueAt ? new Date(input.dueAt) : null,
+      notes: input.notes || null,
+      dueAt: new Date(input.dueAt),
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/calendar");
-  revalidatePath("/courses");
+  revalidateAssignmentPages();
 }
 
-export async function updateEvent(id: string, input: CalendarEventInput) {
+export async function updateAssignment(id: string, input: AssignmentInput) {
   const userId = await requireUserId();
+  await requireOwnCourse(userId, input.courseId);
 
-  await prisma.calendarEvent.updateMany({
+  await prisma.assignment.updateMany({
     where: { id, userId },
     data: {
-      courseId: input.courseId || null,
+      courseId: input.courseId,
       title: input.title,
-      description: input.description || null,
-      location: input.location || null,
-      startAt: new Date(input.start),
-      endAt: new Date(input.end),
-      allDay: input.allDay,
-      isAssignment: input.isAssignment,
-      dueAt: input.isAssignment && input.dueAt ? new Date(input.dueAt) : null,
-      userModified: true,
+      notes: input.notes || null,
+      dueAt: new Date(input.dueAt),
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/calendar");
-  revalidatePath("/courses");
+  revalidateAssignmentPages();
 }
 
-export async function deleteEvent(id: string) {
+export async function deleteAssignment(id: string) {
   const userId = await requireUserId();
 
-  await prisma.calendarEvent.deleteMany({
+  await prisma.assignment.deleteMany({
     where: { id, userId },
   });
 
-  revalidatePath("/");
-  revalidatePath("/calendar");
-  revalidatePath("/courses");
+  revalidateAssignmentPages();
 }

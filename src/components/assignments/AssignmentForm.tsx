@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
-import { createEvent, deleteEvent, updateEvent } from "@/server-actions/calendar-actions";
+import { createAssignment, deleteAssignment, updateAssignment } from "@/server-actions/assignment-actions";
 
 export interface CourseOption {
   id: string;
@@ -34,6 +35,7 @@ export interface AssignmentFormValues {
   courseId: string;
   day: string; // YYYY-MM-DD
   time: string; // HH:mm
+  notes: string;
 }
 
 interface AssignmentFormProps {
@@ -46,9 +48,6 @@ interface AssignmentFormProps {
   lockedCourseId?: string;
 }
 
-const NO_COURSE = "none";
-const DUE_DURATION_MS = 15 * 60 * 1000;
-
 export function AssignmentForm({
   open,
   onOpenChange,
@@ -59,13 +58,17 @@ export function AssignmentForm({
 }: AssignmentFormProps) {
   const [values, setValues] = useState(initialValues);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
 
   // Reset local state each time the dialog transitions from closed to open,
   // picking up the latest initialValues (id alone can't detect "new" vs "new").
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setValues(initialValues);
+    if (open) {
+      setValues(initialValues);
+      setError(null);
+    }
   }
 
   const isEdit = Boolean(initialValues.id);
@@ -82,28 +85,22 @@ export function AssignmentForm({
       const [year, month, day] = values.day.split("-").map(Number);
       const [hours, minutes] = values.time.split(":").map(Number);
       const due = new Date(year, month - 1, day, hours, minutes);
-      // Clamp to the same calendar day as `due` — a due time late enough in the
-      // evening (e.g. the 23:59 default) would otherwise push `end` past midnight,
-      // making FullCalendar render this as a 2-day-spanning event that visually
-      // bleeds into the next day's cell in month view.
-      const endOfDueDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-      const end = new Date(Math.min(due.getTime() + DUE_DURATION_MS, endOfDueDay.getTime()));
-      const dueAt = due.toISOString();
+      const courseId = lockedCourseId ?? values.courseId;
+      if (!courseId) {
+        setError("Choose a course.");
+        return;
+      }
+      setError(null);
       const input = {
         title: values.title,
-        description: null,
-        location: null,
-        start: dueAt,
-        end: end.toISOString(),
-        allDay: false,
-        courseId: lockedCourseId ?? (values.courseId === NO_COURSE ? null : values.courseId),
-        isAssignment: true,
-        dueAt,
+        notes: values.notes.trim() || null,
+        courseId,
+        dueAt: due.toISOString(),
       };
       if (isEdit && initialValues.id) {
-        await updateEvent(initialValues.id, input);
+        await updateAssignment(initialValues.id, input);
       } else {
-        await createEvent(input);
+        await createAssignment(input);
       }
       onSaved();
       onOpenChange(false);
@@ -116,7 +113,7 @@ export function AssignmentForm({
     if (!initialValues.id) return;
     setSubmitting(true);
     try {
-      await deleteEvent(initialValues.id);
+      await deleteAssignment(initialValues.id);
       onSaved();
       onOpenChange(false);
     } finally {
@@ -145,16 +142,13 @@ export function AssignmentForm({
             <div className="space-y-1.5">
               <Label htmlFor="assignment-course">Course</Label>
               <Select
-                value={values.courseId || NO_COURSE}
-                onValueChange={(courseId) =>
-                  setValues({ ...values, courseId: courseId ?? NO_COURSE })
-                }
+                value={values.courseId || null}
+                onValueChange={(courseId) => setValues({ ...values, courseId: courseId ?? "" })}
               >
                 <SelectTrigger id="assignment-course" className="w-full">
-                  <SelectValue placeholder="No course" />
+                  <SelectValue placeholder="Choose a course" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_COURSE}>No course</SelectItem>
                   {courses.map((course) => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.name}
@@ -186,6 +180,17 @@ export function AssignmentForm({
               />
             </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="assignment-notes">Notes (optional)</Label>
+            <Textarea
+              id="assignment-notes"
+              value={values.notes}
+              onChange={(e) => setValues({ ...values, notes: e.target.value })}
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <DialogFooter className="flex items-center gap-2 sm:justify-between">
             {isEdit ? (

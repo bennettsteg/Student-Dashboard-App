@@ -85,17 +85,9 @@ export async function deleteCourses(ids: string[]) {
   if (ids.length === 0) return;
   const userId = await requireUserId();
 
-  // Assignments only exist as a concept tied to a manually-created course (see
-  // /assignments), so deleting the course should take its assignments with it rather
-  // than leaving them behind as orphaned "No course" rows. Non-assignment manual
-  // calendar events tied to this course are left alone — they just lose the course
-  // link (CalendarEvent.courseId is onDelete: SetNull).
-  await prisma.$transaction([
-    prisma.calendarEvent.deleteMany({
-      where: { userId, courseId: { in: ids }, isAssignment: true, source: "MANUAL" },
-    }),
-    prisma.course.deleteMany({ where: { id: { in: ids }, userId } }),
-  ]);
+  // Assignment.courseId is onDelete: Cascade, so dropping a Course also deletes its
+  // Assignments in the same statement.
+  await prisma.course.deleteMany({ where: { id: { in: ids }, userId } });
 
   revalidatePath("/schedule");
   revalidatePath("/courses");

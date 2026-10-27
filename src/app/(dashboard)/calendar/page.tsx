@@ -8,9 +8,9 @@ import { MiniCalendarWidgetClient } from "../MiniCalendarWidgetClient";
 export default async function CalendarPage() {
   const userId = await requireUserId();
 
-  const assignments = await prisma.calendarEvent.findMany({
-    where: { userId, isAssignment: true, source: "MANUAL", status: "ACTIVE" },
-    orderBy: { startAt: "asc" },
+  const assignments = await prisma.assignment.findMany({
+    where: { userId },
+    orderBy: { dueAt: "asc" },
   });
 
   return (
@@ -22,7 +22,7 @@ export default async function CalendarPage() {
       <MiniCalendarWidgetClient
         title="Due dates"
         events={assignments.map((a) => {
-          const due = a.dueAt ?? a.startAt;
+          const due = a.dueAt;
           return {
             id: a.id,
             title: a.title,

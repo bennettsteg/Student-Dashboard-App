@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import type { NextAssignmentDTO } from "@/lib/calendar/queries";
+import type { NextAssignmentDTO } from "@/lib/assignments/queries";
 
 function dayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -44,7 +44,7 @@ export function NextAssignmentWidget({ items }: { items: NextAssignmentDTO[] }) 
           <li className="text-sm text-muted-foreground">Nothing due — you&apos;re all caught up.</li>
         )}
         {visible.map((item) => (
-          <li key={item.eventId} className="flex items-center gap-2 text-sm">
+          <li key={item.assignmentId} className="flex items-center gap-2 text-sm">
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: item.courseColor ?? "var(--muted-foreground)" }}

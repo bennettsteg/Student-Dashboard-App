@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
-import { upcomingAssignments } from "@/lib/calendar/queries";
+import { upcomingAssignments } from "@/lib/assignments/queries";
 import { NotificationWidget } from "@/components/dashboard/NotificationWidget";
 import type { MiniCalendarEvent } from "@/components/dashboard/MiniCalendarWidget";
 
@@ -8,24 +8,24 @@ import { MiniCalendarWidgetClient } from "./MiniCalendarWidgetClient";
 import { NextAssignmentWidgetClient } from "./NextAssignmentWidgetClient";
 
 function toCalendarEvents(
-  events: { id: string; title: string; startAt: Date; endAt: Date; allDay: boolean; course: { color: string | null } | null }[],
+  assignments: { id: string; title: string; dueAt: Date; course: { color: string | null } }[],
 ): MiniCalendarEvent[] {
-  return events.map((event) => ({
-    id: event.id,
-    title: event.title,
-    start: event.startAt.toISOString(),
-    end: event.endAt.toISOString(),
-    allDay: event.allDay,
-    courseColor: event.course?.color ?? null,
+  return assignments.map((assignment) => ({
+    id: assignment.id,
+    title: assignment.title,
+    start: assignment.dueAt.toISOString(),
+    end: assignment.dueAt.toISOString(),
+    allDay: false,
+    courseColor: assignment.course.color,
   }));
 }
 
 export default async function DashboardPage() {
   const userId = await requireUserId();
 
-  const [classEvents, unreadCount, recentMail, nextAssignments] = await Promise.all([
-    prisma.calendarEvent.findMany({
-      where: { userId, status: "ACTIVE", source: "MANUAL" },
+  const [allAssignments, unreadCount, recentMail, nextAssignments] = await Promise.all([
+    prisma.assignment.findMany({
+      where: { userId },
       include: { course: true },
     }),
     prisma.notificationItem.count({ where: { userId, source: "EMAIL", isRead: false } }),
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <NextAssignmentWidgetClient items={nextAssignments} />
-      <MiniCalendarWidgetClient title="Class Calendar" events={toCalendarEvents(classEvents)} />
+      <MiniCalendarWidgetClient title="Due dates" events={toCalendarEvents(allAssignments)} />
       <NotificationWidget
         unreadCount={unreadCount}
         items={recentMail.map((m) => ({

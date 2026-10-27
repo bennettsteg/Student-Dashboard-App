@@ -24,7 +24,7 @@ export default async function CoursesPage() {
     include: {
       _count: {
         select: {
-          events: { where: { isAssignment: true, source: "MANUAL", status: "ACTIVE" } },
+          assignments: true,
         },
       },
     },
@@ -65,7 +65,7 @@ export default async function CoursesPage() {
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Assignments</dt>
-                  <dd className="font-semibold">{course._count.events}</dd>
+                  <dd className="font-semibold">{course._count.assignments}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Location</dt>

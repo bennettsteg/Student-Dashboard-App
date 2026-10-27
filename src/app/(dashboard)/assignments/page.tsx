@@ -14,7 +14,7 @@ export default async function AssignmentsPage() {
     include: {
       _count: {
         select: {
-          events: { where: { isAssignment: true, source: "MANUAL", status: "ACTIVE" } },
+          assignments: true,
         },
       },
     },
@@ -38,7 +38,7 @@ export default async function AssignmentsPage() {
             name: course.name,
             code: course.code,
             color: course.color,
-            assignmentCount: course._count.events,
+            assignmentCount: course._count.assignments,
           }))}
         />
       )}
