@@ -109,8 +109,8 @@ model Course {
 
 // A Grade Category: a named, weighted share of a Course's grade (e.g. Exams 40%). A Course's
 // Grade Categories are its Grade Scheme. The weights need not total 100 (the UI only warns).
-// Deleting one deletes its Grade Entries. Current Grade is derived from these at read time �
-// see src/lib/grades/currentGrade.ts � and never stored.
+// Deleting one deletes its Grade Entries. Current Grade is derived from these at read time -
+// see src/lib/grades/currentGrade.ts - and never stored.
 model GradeCategory {
   id        String   @id @default(cuid())
   courseId  String

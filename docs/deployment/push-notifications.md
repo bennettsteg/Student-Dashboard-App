@@ -1,6 +1,6 @@
 # Push notifications (Reminders)
 
-StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. This covers the delivery plumbing and the Settings test push; when the daily digest is sent is described in [worker.md](worker.md).
+StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. This covers the delivery plumbing and the Settings test push; when the daily Reminder is sent is described in [worker.md](worker.md).
 
 Push needs the HTTPS tailnet address from [tailnet-https.md](tailnet-https.md) and, on iPhone, the installed app from [install-pwa.md](install-pwa.md).
 
@@ -66,13 +66,4 @@ The worker's daily digest (and the Settings test push) use `sendPushToUser(userI
 
 ## Manual verification checklist
 
-Real push delivery needs real devices and can't be automated:
-
-- [ ] Keys generated, in `.env`, app and worker restarted; Settings no longer says push isn't set up.
-- [ ] **iPhone, installed app:** Settings, Enable reminders on this device, allow. Settings shows "Reminders are enabled on this device" and "1 device is enabled."
-- [ ] **iPhone:** Send test push. The notification arrives (with the app in the background or closed) and tapping it opens Assignments.
-- [ ] **iPhone, Safari tab:** Settings explains that the installed app is required.
-- [ ] **iPhone:** deny the permission once (or switch it off in iOS Settings); Settings shows the blocked message with the fix.
-- [ ] **Desktop Edge:** enable and send a test push; tap opens Assignments in the app window.
-- [ ] **Desktop Brave:** enabling fails with the Google services message until that setting is on; works afterwards.
-- [ ] Uninstall the app from the phone (or revoke its notification permission), then trigger a send from the remaining device (Send test push targets only the current device, so the daily digest is what reaches the dead one): the dead device disappears from the "devices enabled" count after the next digest.
+Real push delivery needs real devices and can't be automated. The list (keys, enabling the iPhone and desktop, the test push, the blocked and Safari-tab messages, receiving a real daily Reminder, Brave, stale device cleanup) is section 3 of [manual-verification.md](manual-verification.md), where results are recorded.

@@ -4,7 +4,7 @@ StudyDesk is an installable PWA: it gets its own icon and opens in its own windo
 
 ## iPhone / iPad (Safari)
 
-Requires iOS or iPadOS 16.4 or later (needed for Reminders later; installing itself works earlier). Installing is only possible from **Safari**, not from Chrome or Brave on iOS.
+Requires iOS or iPadOS 16.4 or later (needed for Reminders; installing itself works earlier). Installing is only possible from **Safari**, not from Chrome or Brave on iOS.
 
 1. Connect Tailscale on the phone.
 2. Open `https://<host>.<tailnet>.ts.net` in Safari.
@@ -56,11 +56,4 @@ The icons are committed. After changing the logo, run `node scripts/generate-ico
 
 ## Verification checklist
 
-These need real devices and have to be done by hand:
-
-- [ ] **iPhone, Tailscale on:** Safari, Share, Add to Home Screen. The icon is the StudyDesk cap and the app opens standalone.
-- [ ] **iPhone:** content clears the notch/Dynamic Island and the home indicator; the bottom tab bar is fully tappable.
-- [ ] **iPhone, Tailscale off:** opening the installed app shows the "Can't reach StudyDesk, is Tailscale on?" screen. Turning Tailscale on and tapping **Try again** loads the dashboard.
-- [ ] **Edge desktop:** the install option appears and the app opens in its own window.
-- [ ] **Brave desktop:** the install option appears and the app opens in its own window.
-- [ ] **DevTools (desktop), Application tab:** the manifest shows no errors, the icons (including maskable) load, and `sw.js` is "activated and running".
+These need real devices and have to be done by hand. The list (iPhone install, safe areas, the offline screen with Tailscale off, Edge and Brave desktop install, DevTools manifest check) is section 2 of [manual-verification.md](manual-verification.md), where results are recorded.
