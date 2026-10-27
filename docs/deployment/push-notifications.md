@@ -1,6 +1,6 @@
 # Push notifications (Reminders)
 
-StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. How the daily digest decides when to send is a separate ticket; this covers the delivery plumbing and the Settings test push.
+StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. This covers the delivery plumbing and the Settings test push; when the daily digest is sent is described in [worker.md](worker.md).
 
 Push needs the HTTPS tailnet address from [tailnet-https.md](tailnet-https.md) and, on iPhone, the installed app from [install-pwa.md](install-pwa.md).
 
