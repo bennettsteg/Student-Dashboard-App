@@ -22,7 +22,22 @@ interface CourseDropDialogProps {
 }
 
 function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+  if (count === 1) return `1 ${noun}`;
+  const many = noun.endsWith("y") ? `${noun.slice(0, -1)}ies` : `${noun}s`;
+  return `${count} ${many}`;
+}
+
+/** "the course, 2 assignments and 3 grade entries": only the things that exist are listed. */
+function dropSentence(impact: CourseDropImpact): string {
+  const parts = ["the course"];
+  if (impact.assignments > 0) parts.push(plural(impact.assignments, "assignment"));
+  if (impact.gradeCategories > 0) parts.push(plural(impact.gradeCategories, "grade category"));
+  if (impact.gradeEntries > 0) parts.push(plural(impact.gradeEntries, "grade entry"));
+  const list =
+    parts.length === 1
+      ? parts[0]
+      : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return `This permanently deletes ${list}. This cannot be undone.`;
 }
 
 /** Confirm dropping a Course, listing what is deleted along with it. */
@@ -66,7 +81,7 @@ export function CourseDropDialog({ course, onClose, onDropped }: CourseDropDialo
           <DialogDescription>
             {impact === null
               ? "Checking what this will delete…"
-              : `This permanently deletes the course and ${plural(impact.assignments, "assignment")}. This cannot be undone.`}
+              : dropSentence(impact)}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

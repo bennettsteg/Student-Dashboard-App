@@ -69,7 +69,7 @@ model VerificationToken {
 // --- App models ---
 
 // A manually-created course, combined with its weekly schedule meeting time.
-// Deleting a Course cascades to its Assignments.
+// Deleting a Course cascades to its Assignments, Grade Categories and Grade Entries.
 model Course {
   id         String   @id @default(cuid())
   userId     String
@@ -85,10 +85,52 @@ model Course {
   endTime    String
   createdAt  DateTime @default(now())
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignments Assignment[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments     Assignment[]
+  gradeCategories GradeCategory[]
+  gradeEntries    GradeEntry[]
 
   @@index([userId])
+}
+
+// A Grade Category: a named, weighted share of a Course's grade (e.g. Exams 40%). A Course's
+// Grade Categories are its Grade Scheme. The weights need not total 100 (the UI only warns).
+// Deleting one deletes its Grade Entries. Current Grade is derived from these at read time �
+// see src/lib/grades/currentGrade.ts � and never stored.
+model GradeCategory {
+  id        String   @id @default(cuid())
+  courseId  String
+  name      String
+  // Percentage, 0 to 100, decimals allowed.
+  weight    Float
+  createdAt DateTime @default(now())
+
+  course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  entries GradeEntry[]
+
+  @@index([courseId])
+}
+
+// A Grade Entry: one score recorded by hand under a Grade Category. Standalone: it has no
+// reference to an Assignment. `courseId` duplicates the Category's Course so a Course's
+// entries can be counted and cascaded directly; the server actions keep the two consistent.
+model GradeEntry {
+  id             String    @id @default(cuid())
+  courseId       String
+  categoryId     String
+  name           String
+  pointsEarned   Float
+  // Greater than zero (enforced by the server actions).
+  pointsPossible Float
+  // Optional calendar date the score was earned, stored at UTC midnight.
+  date           DateTime?
+  createdAt      DateTime  @default(now())
+
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  category GradeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([categoryId])
 }
 
 // A piece of work with a due date that belongs to a Course, entered by hand. Completing it
@@ -160,19 +202,19 @@ model NotificationItem {
 
 // Per-user Mail Sync bookkeeping. Written by every sync, manual or automatic (ADR-0002).
 model MailSyncState {
-  userId          String    @id
+  userId         String    @id
   // When the last sync that completed successfully finished. Drives the "last synced" display
   // and the 24-hour auto-sync guard.
-  lastSuccessAt   DateTime?
+  lastSuccessAt  DateTime?
   // When the last sync (successful or not) started. Drives the manual-sync cooldown.
-  lastAttemptAt   DateTime?
+  lastAttemptAt  DateTime?
   // Error message of the last attempt, or null if it succeeded.
-  lastError       String?
+  lastError      String?
   // Set when Microsoft rejects the refresh token; auto-sync stays paused until a sync succeeds
   // again after the student reconnects Microsoft.
-  needsReconnect  Boolean   @default(false)
+  needsReconnect Boolean   @default(false)
   // Set while a sync is running, so at most one runs per user. Stale after a few minutes.
-  syncStartedAt   DateTime?
+  syncStartedAt  DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

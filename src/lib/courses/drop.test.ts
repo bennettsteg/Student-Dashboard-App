@@ -11,6 +11,33 @@ const USER_ID = `course-drop-test-${process.pid}-${Date.now()}`;
 const OTHER_USER_ID = `course-drop-other-${process.pid}-${Date.now()}`;
 const DUE = new Date("2026-11-02T04:59:00.000Z");
 
+/**
+ * Gives a Course Grade Categories, each with the given number of Grade Entries. Returns the
+ * Category ids.
+ */
+async function addGrades(courseId: string, entriesPerCategory: number[]) {
+  const ids: string[] = [];
+  for (const [index, count] of entriesPerCategory.entries()) {
+    const category = await prisma.gradeCategory.create({
+      data: {
+        courseId,
+        name: `Category ${index + 1}`,
+        weight: 100 / entriesPerCategory.length,
+        entries: {
+          create: Array.from({ length: count }, (_, n) => ({
+            courseId,
+            name: `Entry ${index + 1}.${n + 1}`,
+            pointsEarned: 8.5,
+            pointsPossible: 10,
+          })),
+        },
+      },
+    });
+    ids.push(category.id);
+  }
+  return ids;
+}
+
 async function createCourse(userId: string, name: string, assignmentTitles: string[]) {
   return prisma.course.create({
     data: {
@@ -60,6 +87,20 @@ describe("dropCourse", () => {
     expect(remaining.map((a) => a.title)).toEqual(["Lab 2", "Project", "Quiz"]);
   });
 
+  it("also deletes the dropped Course's Grade Categories and Grade Entries, and only those", async () => {
+    const dropped = await createCourse(USER_ID, "Web Applications", ["Essay"]);
+    const kept = await createCourse(USER_ID, "Networking", ["Quiz"]);
+    await addGrades(dropped.id, [2, 1]);
+    await addGrades(kept.id, [3]);
+
+    await dropCourse(USER_ID, dropped.id);
+
+    expect(await prisma.gradeCategory.count({ where: { courseId: dropped.id } })).toBe(0);
+    expect(await prisma.gradeEntry.count({ where: { courseId: dropped.id } })).toBe(0);
+    expect(await prisma.gradeCategory.count({ where: { courseId: kept.id } })).toBe(1);
+    expect(await prisma.gradeEntry.count({ where: { courseId: kept.id } })).toBe(3);
+  });
+
   it("does nothing for a Course that belongs to another user", async () => {
     const theirs = await createCourse(OTHER_USER_ID, "Not mine", ["Their essay"]);
 
@@ -72,13 +113,15 @@ describe("dropCourse", () => {
 });
 
 describe("courseDropImpact", () => {
-  it("counts the Assignments that dropping the Course would also delete", async () => {
+  it("counts the Assignments, Grade Categories and Grade Entries the drop would also delete", async () => {
     const course = await createCourse(USER_ID, "Database Systems", ["A", "B", "C"]);
-    await createCourse(USER_ID, "Other", ["X"]);
+    await addGrades(course.id, [2, 3]);
+    const other = await createCourse(USER_ID, "Other", ["X"]);
+    await addGrades(other.id, [4]);
 
     const impact = await courseDropImpact(USER_ID, course.id);
 
-    expect(impact).toEqual({ assignments: 3 });
+    expect(impact).toEqual({ assignments: 3, gradeCategories: 2, gradeEntries: 5 });
   });
 
   it("reports nothing for a Course the user does not own", async () => {
