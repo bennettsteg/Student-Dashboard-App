@@ -24,7 +24,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   courses       Course[]
-  calendarEvents CalendarEvent[]
+  assignments   Assignment[]
   notifications NotificationItem[]
   mailSyncState MailSyncState?
   links         Link[]
@@ -69,8 +69,7 @@ model VerificationToken {
 // --- App models ---
 
 // A manually-created course, combined with its weekly schedule meeting time.
-// This is the only way a Course comes into existence — Blackboard sync never
-// creates or links one (see CalendarEvent.sourceCourseName).
+// Deleting a Course cascades to its Assignments.
 model Course {
   id         String   @id @default(cuid())
   userId     String
@@ -85,57 +84,31 @@ model Course {
   endTime    String
   createdAt  DateTime @default(now())
 
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  events CalendarEvent[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
 
   @@index([userId])
 }
 
-enum EventSource {
-  BLACKBOARD_ICS
-  MANUAL
-}
+// A piece of work with a due date that belongs to a Course, entered by hand. Completing it
+// deletes the row. Status (Overdue / Due today / Due soon / Upcoming) is derived at read
+// time from `dueAt` — see src/lib/assignments/status.ts — and never stored.
+model Assignment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  title     String
+  notes     String?
+  // The due instant. The student's wall-clock due time is resolved to an instant in
+  // their own timezone before it is stored.
+  dueAt     DateTime
+  createdAt DateTime @default(now())
 
-enum EventStatus {
-  ACTIVE
-  CANCELLED
-}
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-model CalendarEvent {
-  id           String      @id @default(cuid())
-  userId       String
-  courseId     String?
-  title        String
-  description  String?
-  location     String?
-  startAt      DateTime
-  endAt        DateTime
-  allDay       Boolean     @default(false)
-  source       EventSource
-  // Course name as parsed from the Blackboard ICS feed ("Course: Title" prefix).
-  // Reference-only display text for BLACKBOARD_ICS events — never linked to a
-  // real Course row, since Blackboard sync must never create/match courses.
-  sourceCourseName String?
-  // iCal UID for BLACKBOARD_ICS events, null for MANUAL events.
-  externalUid  String?
-  // Dedup key for individual occurrences expanded from a recurring VEVENT.
-  recurrenceId String?
-  // Hash of the upstream VEVENT fields as last seen; used to skip no-op syncs.
-  lastSyncedHash String?
-  // Once true, sync must never overwrite this row's content fields again.
-  userModified Boolean     @default(false)
-  status       EventStatus @default(ACTIVE)
-  isAssignment Boolean     @default(false)
-  dueAt        DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
-
-  @@unique([userId, source, externalUid, recurrenceId])
-  @@index([userId, startAt])
-  @@index([courseId, isAssignment, dueAt])
+  @@index([userId, dueAt])
+  @@index([courseId])
 }
 
 // A user-added shortcut to an external site (school portal, course tools, etc.),

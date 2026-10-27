@@ -17,15 +17,16 @@ export default async function CourseAssignmentsPage({
   const course = await prisma.course.findFirst({ where: { id: courseId, userId } });
   if (!course) notFound();
 
-  const assignments = await prisma.calendarEvent.findMany({
-    where: { userId, courseId, isAssignment: true, source: "MANUAL", status: "ACTIVE" },
+  const assignments = await prisma.assignment.findMany({
+    where: { userId, courseId },
     orderBy: { dueAt: "asc" },
   });
 
   const assignmentDTOs: AssignmentDTO[] = assignments.map((a) => ({
     id: a.id,
     title: a.title,
-    dueAt: (a.dueAt ?? a.startAt).toISOString(),
+    dueAt: a.dueAt.toISOString(),
+    notes: a.notes,
   }));
 
   return (

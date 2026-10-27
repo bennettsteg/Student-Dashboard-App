@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { AssignmentForm, type AssignmentFormValues } from "@/components/calendar/AssignmentForm";
+import { AssignmentForm, type AssignmentFormValues } from "@/components/assignments/AssignmentForm";
 import { toDateValue, toTimeValue } from "@/lib/dates";
 
 export interface AssignmentDTO {
   id: string;
   title: string;
   dueAt: string;
+  notes: string | null;
 }
 
 export function CourseAssignmentsClient({
@@ -26,6 +27,7 @@ export function CourseAssignmentsClient({
     courseId,
     day: "",
     time: "",
+    notes: "",
   });
 
   function openCreateForm() {
@@ -34,6 +36,7 @@ export function CourseAssignmentsClient({
       courseId,
       day: toDateValue(new Date()),
       time: "23:59",
+      notes: "",
     });
     setFormOpen(true);
   }
@@ -46,6 +49,7 @@ export function CourseAssignmentsClient({
       courseId,
       day: toDateValue(due),
       time: toTimeValue(due),
+      notes: assignment.notes ?? "",
     });
     setFormOpen(true);
   }
