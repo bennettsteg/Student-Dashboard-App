@@ -23,10 +23,17 @@ export default async function DashboardPage() {
   const userId = await requireUserId();
   const now = new Date();
 
-  const [profile, courses, assignments, grades, unreadCount, recentMail] = await Promise.all([
+  // Two small batches rather than one wide Promise.all: the local dev database (Prisma's
+  // PGlite server) drops connections beyond about three concurrent queries.
+  const [profile, courses, assignments] = await Promise.all([
     getProfile(userId),
     prisma.course.findMany({ where: { userId }, orderBy: { name: "asc" } }),
-    prisma.assignment.findMany({ where: { userId }, select: { id: true, title: true, courseId: true, dueAt: true } }),
+    prisma.assignment.findMany({
+      where: { userId },
+      select: { id: true, title: true, courseId: true, dueAt: true },
+    }),
+  ]);
+  const [grades, unreadCount, recentMail] = await Promise.all([
     currentGradesByCourse(userId),
     prisma.notificationItem.count({ where: { userId, source: "EMAIL", isRead: false } }),
     prisma.notificationItem.findMany({

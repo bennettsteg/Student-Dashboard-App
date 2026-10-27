@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A personal, single-user student dashboard: aggregates Outlook mail (Microsoft Graph) and manually-entered courses, assignments and links, with a home-page overview of notifications / mini calendar / next-assignment-per-class. Built for self-hosting via Docker on a home server. Not multi-tenant, not designed for other users.
+A personal, single-user student dashboard: aggregates Outlook mail (Microsoft Graph) and manually-entered courses, assignments and links, with a home-page Dashboard (summary cards, next-due assignments, recent notifications, this-week strip, courses with Current Grade, header search). Built for self-hosting via Docker on a home server. Not multi-tenant, not designed for other users.
 
 **An overhaul is planned and not yet implemented.** The code described below is the current state. The agreed direction is recorded in `CONTEXT.md` (domain language) and `docs/adr/`: manual-only assignments with Blackboard sync removed (ADR-0001 — the sync code is gone and the `Assignment` model is in place), a daily mail auto-sync (ADR-0002), and a tailnet-only HTTPS PWA (ADR-0003). Where this file and an ADR disagree about the target, the ADR wins; where they disagree about what the code does today, this file wins.
 
