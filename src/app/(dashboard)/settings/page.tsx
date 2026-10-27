@@ -71,8 +71,8 @@ export default async function SettingsPage() {
         </p>
         {connection.status === "needs-reconnect" && (
           <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
-            Microsoft stopped accepting the saved sign-in, so mail can&apos;t sync until you
-            reconnect.
+            Microsoft stopped accepting the saved sign-in, so mail can&apos;t sync and automatic
+            mail sync is paused until you reconnect.
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -110,8 +110,14 @@ export default async function SettingsPage() {
       <section className="space-y-4 rounded-xl border border-border bg-card p-6">
         <h2 className="text-lg font-bold">Mail</h2>
         <p className="text-sm text-muted-foreground">
-          Fetch your newest Outlook mail on demand.
+          Mail also syncs automatically once every 24 hours. Use Sync mail to fetch your newest
+          Outlook mail now.
         </p>
+        {connection.status === "needs-reconnect" && (
+          <p className="text-sm text-destructive">
+            Automatic sync is paused. Reconnect Microsoft above to resume it.
+          </p>
+        )}
         <SyncMailControl
           sync={{
             lastSuccessAt: syncState?.lastSuccessAt?.toISOString() ?? null,

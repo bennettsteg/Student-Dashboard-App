@@ -4,6 +4,7 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 
 import { prisma } from "@/lib/db";
+import { recordMicrosoftSignIn } from "@/lib/mail/reconnect";
 
 const prismaAdapter = PrismaAdapter(prisma);
 
@@ -49,6 +50,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  events: {
+    // Auth.js never refreshes the stored tokens when an already-linked account signs in again,
+    // so this is what makes "Reconnect Microsoft" actually replace a dead refresh token and
+    // resume the paused auto mail sync (see recordMicrosoftSignIn).
+    async signIn({ user, account }) {
+      if (!user?.id || !account) return;
+      await recordMicrosoftSignIn(user.id, account);
+    },
+  },
   callbacks: {
     session({ session, user }) {
       if (session.user) {
