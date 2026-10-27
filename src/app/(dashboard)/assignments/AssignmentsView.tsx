@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DEFAULT_DUE_TIME, visibleAssignments } from "@/lib/assignments/list";
 import { assignmentStatus } from "@/lib/assignments/status";
-import { toDateValue, toTimeValue } from "@/lib/dates";
+import { formatDueDay, formatDueTime, localDate, localTimeOfDay } from "@/lib/time";
 
 export interface AssignmentDTO {
   id: string;
@@ -29,20 +29,25 @@ const ALL_COURSES = "all";
 
 /**
  * The open-Assignments table. Everything time-related (status, the formatted due date, the
- * default due day) is derived here in the browser, using the browser's own timezone, because
- * the server may run in a different one (e.g. a UTC Docker host). Hence the page loads this
- * component client-only.
+ * default due day and the form's due instant) uses `timeZone`, the student's profile
+ * timezone passed down from the server, never the browser's or the server's own.
  */
 export function AssignmentsView({
   assignments,
   courses,
   courseFilter,
+  timeZone,
+  showTimeZoneHint,
   openAssignmentId = null,
 }: {
   assignments: AssignmentDTO[];
   courses: CourseOption[];
   /** The Course the table is filtered to, or null for all Courses. */
   courseFilter: string | null;
+  /** The student's IANA timezone (`User.timezone`). */
+  timeZone: string;
+  /** True while the timezone is still the untouched default. */
+  showTimeZoneHint: boolean;
   /** An Assignment to open in the edit form on arrival (header search lands here). */
   openAssignmentId?: string | null;
 }) {
@@ -54,7 +59,6 @@ export function AssignmentsView({
   );
   const [completing, setCompleting] = useState<AssignmentDTO | null>(null);
 
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date();
   const courseById = new Map(courses.map((course) => [course.id, course]));
   const rows = visibleAssignments(assignments, courseFilter);
@@ -65,7 +69,7 @@ export function AssignmentsView({
       // With a filter on, new work most likely belongs to that Course; with a single Course
       // there is nothing to choose.
       courseId: courseId ?? (courses.length === 1 ? courses[0].id : ""),
-      day: toDateValue(new Date()),
+      day: localDate(new Date(), timeZone),
       time: DEFAULT_DUE_TIME,
       notes: "",
     };
@@ -82,8 +86,8 @@ export function AssignmentsView({
       id: assignment.id,
       title: assignment.title,
       courseId: assignment.courseId,
-      day: toDateValue(due),
-      time: toTimeValue(due),
+      day: localDate(due, timeZone),
+      time: localTimeOfDay(due, timeZone),
       notes: assignment.notes ?? "",
     };
   }
@@ -200,14 +204,10 @@ export function AssignmentsView({
                         {course?.name ?? "—"}
                       </span>
                       <span className="col-start-1 text-sm md:col-start-auto">
-                        {due.toLocaleDateString(undefined, {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {formatDueDay(due, timeZone)}
                         <span className="text-muted-foreground">
                           {" "}
-                          · {due.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                          · {formatDueTime(due, timeZone)}
                         </span>
                       </span>
                       <span className="col-start-1 md:col-start-auto">
@@ -239,6 +239,8 @@ export function AssignmentsView({
         onOpenChange={setFormOpen}
         courses={courses}
         initialValues={formValues}
+        timeZone={timeZone}
+        showTimeZoneHint={showTimeZoneHint}
         onSaved={() => router.refresh()}
       />
 

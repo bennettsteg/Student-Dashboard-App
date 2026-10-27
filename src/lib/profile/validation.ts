@@ -16,6 +16,12 @@ export interface ProfileInput {
 
 export type ProfileParseResult = { ok: true; value: ProfileInput } | { ok: false; error: string };
 
+/**
+ * The timezone a new user starts with, until the student saves Settings. Mirrors the
+ * `User.timezone` column default in `prisma/schema.prisma`.
+ */
+export const DEFAULT_TIMEZONE = "UTC";
+
 const MAX_TEXT_LENGTH = 100;
 
 /** True for an IANA timezone name the runtime knows (not an offset like "+05:00"). */

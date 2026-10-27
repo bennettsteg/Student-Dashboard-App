@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { assignmentStatus, type AssignmentStatus } from "@/lib/assignments/status";
-import { localDate } from "@/lib/time";
+import { formatDueTime, localDate } from "@/lib/time";
 import { groupByDueDay, monthGrid, monthOf, shiftMonth, type YearMonth } from "@/lib/calendar/month";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +17,6 @@ export interface CalendarAssignmentDTO {
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const subscribeNever = () => () => {};
-const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** Chip colours per derived status. Due soon (and today) is the cream chip from the design. */
 const CHIP_STYLE: Record<AssignmentStatus, string> = {
@@ -42,14 +39,6 @@ const LEGEND: { label: string; swatch: string }[] = [
   { label: "Upcoming", swatch: "bg-secondary ring-1 ring-border" },
 ];
 
-function dueTime(iso: string, timeZone: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    timeZone,
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function monthTitle({ year, month }: YearMonth): string {
   return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("en-US", {
     timeZone: "UTC",
@@ -60,27 +49,8 @@ function monthTitle({ year, month }: YearMonth): string {
 
 /**
  * Month grid of open Assignment due dates only. Day grouping and "today" are resolved in
- * `timeZone` (the browser's timezone when not given), so the grid is only drawn once
- * hydrated: the server can't know the viewer's day.
+ * `timeZone`, the student's profile timezone passed down from the server.
  */
-export function CalendarMonth({
-  assignments,
-  timeZone,
-}: {
-  assignments: CalendarAssignmentDTO[];
-  timeZone?: string;
-}) {
-  const zone = useSyncExternalStore(
-    subscribeNever,
-    () => timeZone ?? browserTimeZone(),
-    () => null,
-  );
-  if (zone === null) {
-    return <CalendarHeading subtitle="Assignment due dates" />;
-  }
-  return <CalendarMonthInner assignments={assignments} timeZone={zone} />;
-}
-
 function CalendarHeading({
   subtitle,
   controls,
@@ -99,7 +69,7 @@ function CalendarHeading({
   );
 }
 
-function CalendarMonthInner({
+export function CalendarMonth({
   assignments,
   timeZone,
 }: {
@@ -206,7 +176,7 @@ function CalendarMonthInner({
                     {items.map((item) => (
                       <li
                         key={item.id}
-                        title={`${item.title} · ${item.courseName} · ${dueTime(item.dueAt.toISOString(), timeZone)}`}
+                        title={`${item.title} · ${item.courseName} · ${formatDueTime(item.dueAt, timeZone)}`}
                         className={cn(
                           "rounded-md px-2 py-1 text-xs leading-tight font-medium",
                           CHIP_STYLE[assignmentStatus(item.dueAt, now, timeZone)],
@@ -274,7 +244,7 @@ function CalendarMonthInner({
                       <span className="block truncate text-xs opacity-80">{item.courseName}</span>
                     </span>
                     <span className="shrink-0 text-xs">
-                      {dueTime(item.dueAt.toISOString(), timeZone)}
+                      {formatDueTime(item.dueAt, timeZone)}
                     </span>
                   </li>
                 ))}

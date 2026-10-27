@@ -12,8 +12,8 @@ export interface CourseScheduleDTO {
 export interface CourseCardDTO extends CourseScheduleDTO {
   instructor: string | null;
   openAssignments: number;
-  /** ISO instant of the earliest Assignment not yet past due, or null. */
-  nextDueAt: string | null;
+  /** The earliest due day, formatted in the profile timezone (e.g. "Tue, Oct 27"), or null. */
+  nextDueLabel: string | null;
   /** Current Grade as a percentage, or null until the Course has a Grade Entry. */
   currentGrade: number | null;
 }

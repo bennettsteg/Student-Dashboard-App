@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -20,27 +20,6 @@ function formatTime(time: string): string {
   const period = hours < 12 ? "AM" : "PM";
   const display = hours % 12 === 0 ? 12 : hours % 12;
   return `${display}:${String(minutes).padStart(2, "0")} ${period}`;
-}
-
-const subscribeNever = () => () => {};
-
-/**
- * A due date in the browser's own timezone. The server doesn't share it, so the text is only
- * rendered once hydrated (an empty string on the server) to avoid a hydration mismatch.
- */
-function LocalDueDate({ iso }: { iso: string | null }) {
-  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
-  if (!iso) return <>—</>;
-  if (!hydrated) return <>&nbsp;</>;
-  return (
-    <>
-      {new Date(iso).toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })}
-    </>
-  );
 }
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
@@ -126,7 +105,7 @@ function CourseCard({
           {formatTime(course.startTime)}
         </Stat>
         <Stat label="Next due">
-          <LocalDueDate iso={course.nextDueAt} />
+          {course.nextDueLabel ?? "—"}
         </Stat>
         <Stat label="Location">{course.location ?? "—"}</Stat>
         <Stat label="Open assignments">{course.openAssignments}</Stat>

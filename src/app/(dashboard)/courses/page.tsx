@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { currentGradesByCourse } from "@/lib/grades/store";
+import { getProfile } from "@/lib/profile/profile";
 import { requireUserId } from "@/lib/session";
+import { formatDueDay } from "@/lib/time";
 import { CoursesView } from "@/components/courses/CoursesView";
 import type { CourseCardDTO } from "@/components/courses/types";
 
@@ -8,7 +10,7 @@ export default async function CoursesPage() {
   const userId = await requireUserId();
   const now = new Date();
 
-  const grades = await currentGradesByCourse(userId);
+  const [profile, grades] = await Promise.all([getProfile(userId), currentGradesByCourse(userId)]);
   const courses = await prisma.course.findMany({
     where: { userId },
     orderBy: { name: "asc" },
@@ -35,7 +37,9 @@ export default async function CoursesPage() {
     endTime: course.endTime,
     color: course.color,
     openAssignments: course._count.assignments,
-    nextDueAt: course.assignments[0]?.dueAt.toISOString() ?? null,
+    nextDueLabel: course.assignments[0]
+      ? formatDueDay(course.assignments[0].dueAt, profile.timezone)
+      : null,
     currentGrade: grades[course.id] ?? null,
   }));
 

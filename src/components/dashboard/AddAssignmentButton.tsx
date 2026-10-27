@@ -11,16 +11,25 @@ import {
 } from "@/components/assignments/AssignmentForm";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DEFAULT_DUE_TIME } from "@/lib/assignments/list";
-import { toDateValue } from "@/lib/dates";
+import { localDate } from "@/lib/time";
 
 /**
  * "Add assignment" on the Dashboard: opens the same shared form the Assignments page uses.
  * Every Assignment needs a Course, so with none yet it points at Courses instead.
  */
-export function AddAssignmentButton({ courses }: { courses: CourseOption[] }) {
+export function AddAssignmentButton({
+  courses,
+  timeZone,
+  showTimeZoneHint,
+}: {
+  courses: CourseOption[];
+  /** The student's IANA timezone (`User.timezone`). */
+  timeZone: string;
+  showTimeZoneHint: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<AssignmentFormValues>(blank(courses));
+  const [values, setValues] = useState<AssignmentFormValues>(blank(courses, timeZone));
 
   if (courses.length === 0) {
     return (
@@ -37,9 +46,8 @@ export function AddAssignmentButton({ courses }: { courses: CourseOption[] }) {
         size="lg"
         className="h-10 px-4 font-semibold"
         onClick={() => {
-          // Default day is read at click time, in the browser's own clock, so it is never a
-          // server-rendered value.
-          setValues(blank(courses));
+          // Default day is read at click time, as today's date in the profile timezone.
+          setValues(blank(courses, timeZone));
           setOpen(true);
         }}
       >
@@ -50,17 +58,19 @@ export function AddAssignmentButton({ courses }: { courses: CourseOption[] }) {
         onOpenChange={setOpen}
         courses={courses}
         initialValues={values}
+        timeZone={timeZone}
+        showTimeZoneHint={showTimeZoneHint}
         onSaved={() => router.refresh()}
       />
     </>
   );
 }
 
-function blank(courses: CourseOption[]): AssignmentFormValues {
+function blank(courses: CourseOption[], timeZone: string): AssignmentFormValues {
   return {
     title: "",
     courseId: courses.length === 1 ? courses[0].id : "",
-    day: toDateValue(new Date()),
+    day: localDate(new Date(), timeZone),
     time: DEFAULT_DUE_TIME,
     notes: "",
   };

@@ -6,6 +6,7 @@ import { formatHeaderDate, greeting } from "@/lib/dashboard/greeting";
 import { summaryStats, weekStrip } from "@/lib/dashboard/summary";
 import { currentGradesByCourse } from "@/lib/grades/store";
 import { getProfile } from "@/lib/profile/profile";
+import { DEFAULT_TIMEZONE } from "@/lib/profile/validation";
 import { formatDueDay } from "@/lib/time";
 import { AddAssignmentButton } from "@/components/dashboard/AddAssignmentButton";
 import { CoursesGrid } from "@/components/dashboard/CoursesGrid";
@@ -73,7 +74,11 @@ export default async function DashboardPage() {
             assignments={assignments.map((a) => ({ id: a.id, title: a.title, courseId: a.courseId }))}
             courses={courses.map((c) => ({ id: c.id, name: c.name, code: c.code }))}
           />
-          <AddAssignmentButton courses={courseOptions} />
+          <AddAssignmentButton
+            courses={courseOptions}
+            timeZone={timeZone}
+            showTimeZoneHint={timeZone === DEFAULT_TIMEZONE}
+          />
         </div>
       </header>
 

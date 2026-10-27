@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
+import { getProfile } from "@/lib/profile/profile";
+import { DEFAULT_TIMEZONE } from "@/lib/profile/validation";
 import { requireUserId } from "@/lib/session";
 
-import { AssignmentsViewClient } from "./AssignmentsViewClient";
+import { AssignmentsView } from "./AssignmentsView";
 
 export default async function AssignmentsPage({
   searchParams,
@@ -11,7 +13,8 @@ export default async function AssignmentsPage({
   const userId = await requireUserId();
   const { course, assignment: openAssignment } = await searchParams;
 
-  const [courses, assignments] = await Promise.all([
+  const [profile, courses, assignments] = await Promise.all([
+    getProfile(userId),
     prisma.course.findMany({ where: { userId }, orderBy: { name: "asc" } }),
     prisma.assignment.findMany({ where: { userId }, orderBy: { dueAt: "asc" } }),
   ]);
@@ -21,7 +24,9 @@ export default async function AssignmentsPage({
     typeof course === "string" && courses.some((c) => c.id === course) ? course : null;
 
   return (
-    <AssignmentsViewClient
+    <AssignmentsView
+      timeZone={profile.timezone}
+      showTimeZoneHint={profile.timezone === DEFAULT_TIMEZONE}
       courses={courses.map((c) => ({ id: c.id, name: c.name, color: c.color }))}
       courseFilter={courseFilter}
       // Set by the header search; an unknown id simply opens nothing.

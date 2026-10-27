@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { zonedTimeToInstant } from "@/lib/time";
 import { createAssignment, updateAssignment } from "@/server-actions/assignment-actions";
 
 export interface CourseOption {
@@ -43,6 +45,10 @@ interface AssignmentFormProps {
   onOpenChange: (open: boolean) => void;
   courses: CourseOption[];
   initialValues: AssignmentFormValues;
+  /** The student's IANA timezone (`User.timezone`): the due day and time are read in it. */
+  timeZone: string;
+  /** True while the timezone is still the untouched default, so Settings is worth a nudge. */
+  showTimeZoneHint?: boolean;
   onSaved: () => void;
 }
 
@@ -55,6 +61,8 @@ export function AssignmentForm({
   onOpenChange,
   courses,
   initialValues,
+  timeZone,
+  showTimeZoneHint = false,
   onSaved,
 }: AssignmentFormProps) {
   const [values, setValues] = useState(initialValues);
@@ -83,14 +91,10 @@ export function AssignmentForm({
     setSubmitting(true);
     setError(null);
     try {
-      // Resolve the wall-clock day/time to an absolute instant here, in the
-      // browser's own timezone, before it crosses to the server — a naive
-      // "YYYY-MM-DDTHH:mm" string would otherwise be re-interpreted using the
-      // server's local timezone (which may differ, e.g. a UTC Docker host),
-      // shifting the stored time.
-      const [year, month, day] = values.day.split("-").map(Number);
-      const [hours, minutes] = values.time.split(":").map(Number);
-      const due = new Date(year, month - 1, day, hours, minutes);
+      // Resolve the wall-clock day/time to an absolute instant here, in the student's
+      // profile timezone (not the browser's or the server's), before it crosses to the
+      // server, so a due time means the same thing on every device.
+      const due = zonedTimeToInstant(values.day, values.time, timeZone);
       const input = {
         title: values.title,
         notes: values.notes.trim() || null,
@@ -169,6 +173,20 @@ export function AssignmentForm({
               />
             </div>
           </div>
+
+          <p className="-mt-1 text-xs text-muted-foreground">
+            Times are in {timeZone}.
+            {showTimeZoneHint && (
+              <>
+                {" "}
+                Not your timezone?{" "}
+                <Link href="/settings" className="text-highlight underline hover:text-foreground">
+                  Set it in Settings
+                </Link>
+                .
+              </>
+            )}
+          </p>
 
           <div className="space-y-1.5">
             <Label htmlFor="assignment-notes">Notes (optional)</Label>
