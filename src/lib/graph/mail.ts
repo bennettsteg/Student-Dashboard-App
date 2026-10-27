@@ -9,6 +9,8 @@ export interface GraphMailItem {
   receivedDateTime: string;
   isRead: boolean;
   conversationId: string | null;
+  /** Link that opens the message in Outlook on the web. */
+  webLink: string | null;
 }
 
 interface GraphMessageDTO {
@@ -19,9 +21,11 @@ interface GraphMessageDTO {
   receivedDateTime: string;
   isRead?: boolean;
   conversationId?: string;
+  webLink?: string;
 }
 
-const MESSAGE_FIELDS = "id,subject,bodyPreview,from,receivedDateTime,isRead,conversationId";
+const MESSAGE_FIELDS =
+  "id,subject,bodyPreview,from,receivedDateTime,isRead,conversationId,webLink";
 
 export async function fetchRecentMail(accessToken: string, top = 25): Promise<GraphMailItem[]> {
   const res = await graphFetch(
@@ -39,17 +43,6 @@ export async function fetchRecentMail(accessToken: string, top = 25): Promise<Gr
     receivedDateTime: m.receivedDateTime,
     isRead: Boolean(m.isRead),
     conversationId: m.conversationId ?? null,
+    webLink: m.webLink ?? null,
   }));
-}
-
-export async function setMailReadState(
-  accessToken: string,
-  messageId: string,
-  isRead: boolean,
-): Promise<void> {
-  await graphFetch(accessToken, `/me/messages/${messageId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ isRead }),
-  });
 }
