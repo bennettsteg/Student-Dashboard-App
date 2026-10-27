@@ -6,21 +6,12 @@ import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { meetingSummary } from "@/lib/courses/validation";
 import { formatPercent } from "@/lib/grades/format";
 
 import { CourseDropDialog } from "./CourseDropDialog";
 import { CourseFormDialog } from "./CourseFormDialog";
 import type { CourseCardDTO } from "./types";
-
-// ISO weekday number -> label (1 = Monday ... 5 = Friday).
-const DAY_ABBREVIATIONS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":").map(Number);
-  const period = hours < 12 ? "AM" : "PM";
-  const display = hours % 12 === 0 ? 12 : hours % 12;
-  return `${display}:${String(minutes).padStart(2, "0")} ${period}`;
-}
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -101,8 +92,7 @@ function CourseCard({
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <Stat label="Meets">
-          {course.daysOfWeek.map((d) => DAY_ABBREVIATIONS[d]).join(" / ")},{" "}
-          {formatTime(course.startTime)}
+          {meetingSummary(course.daysOfWeek, course.startTime) ?? "No set times"}
         </Stat>
         <Stat label="Next due">
           {course.nextDueLabel ?? "—"}

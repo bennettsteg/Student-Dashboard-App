@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
 import { courseDropImpact, dropCourse, type CourseDropImpact } from "@/lib/courses/drop";
+import { parseCourseInput, type CourseInput } from "@/lib/courses/validation";
 import { resolveUserId } from "@/lib/session";
 
 const COURSE_COLORS = [
@@ -15,15 +16,7 @@ const COURSE_COLORS = [
   "#4a8c8c",
 ];
 
-export interface CourseInput {
-  name: string;
-  code?: string | null;
-  instructor?: string | null;
-  location?: string | null;
-  daysOfWeek: number[];
-  startTime: string; // "HH:mm"
-  endTime: string; // "HH:mm"
-}
+export type CourseActionResult = { ok: true } | { ok: false; error: string };
 
 async function requireUserId() {
   const userId = await resolveUserId();
@@ -33,8 +26,11 @@ async function requireUserId() {
   return userId;
 }
 
-export async function createCourse(input: CourseInput) {
+export async function createCourse(input: CourseInput): Promise<CourseActionResult> {
   const userId = await requireUserId();
+  const parsed = parseCourseInput(input);
+  if (!parsed.ok) return parsed;
+  const course = parsed.value;
 
   const count = await prisma.course.count({ where: { userId } });
   const color = COURSE_COLORS[count % COURSE_COLORS.length];
@@ -42,13 +38,7 @@ export async function createCourse(input: CourseInput) {
   await prisma.course.create({
     data: {
       userId,
-      name: input.name,
-      code: input.code || null,
-      instructor: input.instructor?.trim() || null,
-      location: input.location || null,
-      daysOfWeek: input.daysOfWeek,
-      startTime: input.startTime,
-      endTime: input.endTime,
+      ...course,
       color,
     },
   });
@@ -57,28 +47,21 @@ export async function createCourse(input: CourseInput) {
   revalidatePath("/courses");
   revalidatePath("/assignments");
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function updateCourse(id: string, input: CourseInput) {
+export async function updateCourse(id: string, input: CourseInput): Promise<CourseActionResult> {
   const userId = await requireUserId();
+  const parsed = parseCourseInput(input);
+  if (!parsed.ok) return parsed;
 
-  await prisma.course.updateMany({
-    where: { id, userId },
-    data: {
-      name: input.name,
-      code: input.code || null,
-      instructor: input.instructor?.trim() || null,
-      location: input.location || null,
-      daysOfWeek: input.daysOfWeek,
-      startTime: input.startTime,
-      endTime: input.endTime,
-    },
-  });
+  await prisma.course.updateMany({ where: { id, userId }, data: parsed.value });
 
   revalidatePath("/schedule");
   revalidatePath("/courses");
   revalidatePath("/assignments");
   revalidatePath("/");
+  return { ok: true };
 }
 
 /** What dropping this Course would also delete, for the drop confirmation. */

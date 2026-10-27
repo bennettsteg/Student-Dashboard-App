@@ -26,6 +26,10 @@ const DAYS = [
   { value: 5, label: "Fri" },
 ];
 
+// Pre-filled times for a Course that has no meeting times yet; only saved once days are chosen.
+const DEFAULT_START = "09:00";
+const DEFAULT_END = "10:00";
+
 interface CourseFormValues {
   name: string;
   code: string;
@@ -42,8 +46,8 @@ const emptyValues: CourseFormValues = {
   instructor: "",
   location: "",
   daysOfWeek: [],
-  startTime: "09:00",
-  endTime: "10:00",
+  startTime: DEFAULT_START,
+  endTime: DEFAULT_END,
 };
 
 function toValues(course: CourseCardDTO | null): CourseFormValues {
@@ -54,8 +58,8 @@ function toValues(course: CourseCardDTO | null): CourseFormValues {
     instructor: course.instructor ?? "",
     location: course.location ?? "",
     daysOfWeek: course.daysOfWeek,
-    startTime: course.startTime,
-    endTime: course.endTime,
+    startTime: course.startTime || DEFAULT_START,
+    endTime: course.endTime || DEFAULT_END,
   };
 }
 
@@ -84,6 +88,8 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
     }
   }
 
+  const scheduled = values.daysOfWeek.length > 0;
+
   function toggleDay(value: number, checked: boolean) {
     setValues((prev) => ({
       ...prev,
@@ -95,11 +101,12 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!values.name.trim() || values.daysOfWeek.length === 0) {
-      setError("Enter a course name and pick at least one day.");
+    if (!values.name.trim()) {
+      setError("Enter a course name.");
       return;
     }
-    if (values.endTime <= values.startTime) {
+    // A Course may be unscheduled (no days, no times); with days, the times must be valid.
+    if (scheduled && values.endTime <= values.startTime) {
       setError("End time must be after start time.");
       return;
     }
@@ -112,11 +119,14 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
         instructor: values.instructor.trim() || null,
         location: values.location.trim() || null,
         daysOfWeek: values.daysOfWeek,
-        startTime: values.startTime,
-        endTime: values.endTime,
+        startTime: scheduled ? values.startTime : "",
+        endTime: scheduled ? values.endTime : "",
       };
-      if (course) await updateCourse(course.id, input);
-      else await createCourse(input);
+      const result = course ? await updateCourse(course.id, input) : await createCourse(input);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
       onSaved();
       onOpenChange(false);
     } finally {
@@ -177,7 +187,7 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
               <Label htmlFor="course-start-hours">Start time</Label>
               <TimeInput
                 id="course-start"
-                required
+                disabled={!scheduled}
                 value={values.startTime}
                 onChange={(startTime) => setValues({ ...values, startTime })}
               />
@@ -186,7 +196,7 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
               <Label htmlFor="course-end-hours">End time</Label>
               <TimeInput
                 id="course-end"
-                required
+                disabled={!scheduled}
                 value={values.endTime}
                 onChange={(endTime) => setValues({ ...values, endTime })}
               />
@@ -194,7 +204,7 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium">Days</span>
+            <span className="text-sm font-medium">Days (optional)</span>
             {DAYS.map((day) => (
               <div key={day.value} className="flex items-center gap-1.5">
                 <Checkbox
@@ -206,6 +216,13 @@ export function CourseFormDialog({ open, onOpenChange, course, onSaved }: Course
               </div>
             ))}
           </div>
+
+          {!scheduled && (
+            <p className="text-xs text-muted-foreground">
+              No meeting days: this course is saved without set times and is not drawn on the
+              Schedule. Pick days to set them.
+            </p>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
