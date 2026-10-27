@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDueDay, formatHeaderDate, greeting } from "./greeting";
+import { formatHeaderDate, greeting } from "./greeting";
 
 const UTC = "UTC";
 const NY = "America/New_York";
@@ -45,12 +45,5 @@ describe("formatHeaderDate", () => {
   it("is just the date when there is no Term label", () => {
     expect(formatHeaderDate(new Date("2026-10-26T12:00:00Z"), UTC, null)).toBe("Monday, October 26");
     expect(formatHeaderDate(new Date("2026-10-26T12:00:00Z"), UTC, "")).toBe("Monday, October 26");
-  });
-});
-
-describe("formatDueDay", () => {
-  it("is the short weekday, month and day in the student's timezone", () => {
-    expect(formatDueDay(new Date("2026-10-27T23:59:00Z"), UTC)).toBe("Tue, Oct 27");
-    expect(formatDueDay(new Date("2026-10-28T02:00:00Z"), NY)).toBe("Tue, Oct 27");
   });
 });

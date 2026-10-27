@@ -3,7 +3,7 @@
  * argument, so an Assignment lands on the local day it is due, never the server's.
  */
 
-import { localDate } from "@/lib/assignments/status";
+import { localDate } from "@/lib/time";
 
 export interface YearMonth {
   year: number;

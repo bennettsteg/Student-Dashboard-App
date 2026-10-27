@@ -4,26 +4,11 @@
  * is ever stored — status is derived at read time.
  */
 
+import { localDate } from "@/lib/time";
+
 export type AssignmentStatus = "overdue" | "due-today" | "due-soon" | "upcoming";
 
 const DUE_SOON_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-const formatters = new Map<string, Intl.DateTimeFormat>();
-
-/** The calendar date (`YYYY-MM-DD`) that `instant` falls on in `timeZone`. */
-export function localDate(instant: Date, timeZone: string): string {
-  let formatter = formatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    formatters.set(timeZone, formatter);
-  }
-  return formatter.format(instant);
-}
 
 /** True when `dueAt` falls on the same local calendar date as `now` in `timeZone`. */
 export function isDueToday(dueAt: Date, now: Date, timeZone: string): boolean {

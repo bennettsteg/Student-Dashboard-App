@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { localTimeOfDay, reminderDue, type ReminderGuardInput } from "./guard";
+import { reminderDue, type ReminderGuardInput } from "./guard";
 
 const NY = "America/New_York";
 
@@ -64,15 +64,5 @@ describe("reminderDue", () => {
     const input = { reminderTime: "02:30", timeZone: NY } as const;
     expect(due({ ...input, now: new Date("2027-03-14T06:59:00Z") })).toBe(false); // 01:59 EST
     expect(due({ ...input, now: new Date("2027-03-14T07:00:00Z") })).toBe(true); // 03:00 EDT
-  });
-});
-
-describe("localTimeOfDay", () => {
-  it("formats the wall-clock time as zero-padded HH:mm", () => {
-    expect(localTimeOfDay(new Date("2026-10-26T12:05:00Z"), NY)).toBe("08:05");
-  });
-
-  it("shows midnight as 00:00, never 24:00", () => {
-    expect(localTimeOfDay(new Date("2026-10-26T04:00:00Z"), NY)).toBe("00:00");
   });
 });

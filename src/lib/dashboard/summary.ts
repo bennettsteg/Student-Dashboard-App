@@ -3,7 +3,7 @@
  * so "this week" and "today" mean the student's local calendar, never the server's.
  */
 
-import { localDate } from "@/lib/assignments/status";
+import { localDate } from "@/lib/time";
 
 export interface SummaryStats {
   /** Open Assignments due on a local day of the current Monday-Sunday week. */

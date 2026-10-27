@@ -4,7 +4,8 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { assignmentStatus, localDate, type AssignmentStatus } from "@/lib/assignments/status";
+import { assignmentStatus, type AssignmentStatus } from "@/lib/assignments/status";
+import { localDate } from "@/lib/time";
 import { groupByDueDay, monthGrid, monthOf, shiftMonth, type YearMonth } from "@/lib/calendar/month";
 import { cn } from "@/lib/utils";
 

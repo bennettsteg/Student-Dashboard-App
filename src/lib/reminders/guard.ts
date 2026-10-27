@@ -1,4 +1,4 @@
-import { localDate } from "@/lib/assignments/status";
+import { localDate, localTimeOfDay } from "@/lib/time";
 
 /**
  * The Reminder guard. Pure: the clock and the student's IANA timezone are arguments, and
@@ -18,23 +18,6 @@ export interface ReminderGuardInput {
   /** Assignments due today in `timeZone`. */
   dueTodayCount: number;
   now: Date;
-}
-
-const timeFormatters = new Map<string, Intl.DateTimeFormat>();
-
-/** The wall-clock time (`HH:mm`, 24-hour, midnight is `00:00`) of `instant` in `timeZone`. */
-export function localTimeOfDay(instant: Date, timeZone: string): string {
-  let formatter = timeFormatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-GB", {
-      timeZone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    });
-    timeFormatters.set(timeZone, formatter);
-  }
-  return formatter.format(instant);
 }
 
 /**

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { localDate, isDueToday } from "@/lib/assignments/status";
+import { isDueToday } from "@/lib/assignments/status";
+import { localDate } from "@/lib/time";
 import { buildReminderPayload } from "@/lib/push/payload";
 import { sendPushToUser, type SendOptions } from "@/lib/push/send";
 
