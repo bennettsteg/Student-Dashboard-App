@@ -48,7 +48,7 @@ export default async function CoursesPage() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              href={`/assignments/${course.id}`}
+              href={`/assignments?course=${course.id}`}
               className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 transition-colors hover:bg-accent"
             >
               <div>
