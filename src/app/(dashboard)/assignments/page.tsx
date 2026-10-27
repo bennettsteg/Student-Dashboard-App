@@ -1,47 +1,36 @@
-import Link from "next/link";
-
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 
-import { AssignmentsCourseList } from "./AssignmentsCourseList";
+import { AssignmentsViewClient } from "./AssignmentsViewClient";
 
-export default async function AssignmentsPage() {
+export default async function AssignmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const userId = await requireUserId();
+  const { course } = await searchParams;
 
-  const courses = await prisma.course.findMany({
-    where: { userId },
-    orderBy: { name: "asc" },
-    include: {
-      _count: {
-        select: {
-          assignments: true,
-        },
-      },
-    },
-  });
+  const [courses, assignments] = await Promise.all([
+    prisma.course.findMany({ where: { userId }, orderBy: { name: "asc" } }),
+    prisma.assignment.findMany({ where: { userId }, orderBy: { dueAt: "asc" } }),
+  ]);
+
+  // An unknown or stale `?course=` just shows every Course.
+  const courseFilter =
+    typeof course === "string" && courses.some((c) => c.id === course) ? course : null;
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h1 className="text-lg font-semibold">Assignments</h1>
-      {courses.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          Add a course on the{" "}
-          <Link href="/courses" className="underline hover:text-foreground">
-            Courses
-          </Link>{" "}
-          page before adding assignments.
-        </div>
-      ) : (
-        <AssignmentsCourseList
-          courses={courses.map((course) => ({
-            id: course.id,
-            name: course.name,
-            code: course.code,
-            color: course.color,
-            assignmentCount: course._count.assignments,
-          }))}
-        />
-      )}
-    </div>
+    <AssignmentsViewClient
+      courses={courses.map((c) => ({ id: c.id, name: c.name, color: c.color }))}
+      courseFilter={courseFilter}
+      assignments={assignments.map((a) => ({
+        id: a.id,
+        title: a.title,
+        notes: a.notes,
+        courseId: a.courseId,
+        dueAt: a.dueAt.toISOString(),
+      }))}
+    />
   );
 }
