@@ -8,6 +8,9 @@ import "dotenv/config";
 export default defineConfig({
   test: {
     environment: "node",
+    // Live-database test files share one database; `prisma dev`'s local server (PGlite)
+    // also can't take concurrent connections, so run files one at a time.
+    fileParallelism: false,
   },
   resolve: {
     alias: {
