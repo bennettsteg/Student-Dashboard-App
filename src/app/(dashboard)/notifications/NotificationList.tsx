@@ -7,6 +7,7 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { formatRelativeTime } from "@/lib/mail/relativeTime";
+import { describeSyncOutcome } from "@/lib/mail/syncMessage";
 import {
   markAllNotificationsRead,
   setNotificationRead,
@@ -64,27 +65,7 @@ export function NotificationList({
     setSyncing(true);
     setSyncMessage(null);
     try {
-      const outcome = await syncMail();
-      switch (outcome.status) {
-        case "synced":
-          setSyncMessage({
-            text: `Synced ${outcome.count} recent message${outcome.count === 1 ? "" : "s"}.`,
-            isError: false,
-          });
-          break;
-        case "cooldown":
-          setSyncMessage({
-            text: `Mail was synced a moment ago. Try again in ${outcome.retryAfterSeconds} second${outcome.retryAfterSeconds === 1 ? "" : "s"}.`,
-            isError: true,
-          });
-          break;
-        case "already-running":
-          setSyncMessage({ text: "A sync is already running.", isError: true });
-          break;
-        case "failed":
-          setSyncMessage({ text: `Sync failed: ${outcome.error}`, isError: true });
-          break;
-      }
+      setSyncMessage(describeSyncOutcome(await syncMail()));
       router.refresh();
     } catch (e) {
       setSyncMessage({ text: e instanceof Error ? e.message : "Sync failed", isError: true });
