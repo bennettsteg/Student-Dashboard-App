@@ -67,6 +67,25 @@ beforeEach(async () => {
   await prisma.mailSyncState.deleteMany({ where: { userId: USER_ID } });
 });
 
+describe("runMailSync: lastNewMailAt", () => {
+  const newMailAt = async () =>
+    (await prisma.mailSyncState.findUniqueOrThrow({ where: { userId: USER_ID } })).lastNewMailAt;
+
+  it("moves only when a sync stores a message not seen before", async () => {
+    const inbox = { messages: [message("a")] };
+    await runMailSync(USER_ID, { trigger: "manual", deps: fakeDeps(inbox, T0).deps });
+    expect(await newMailAt()).toEqual(T0);
+
+    // Same inbox again: the sync succeeds but nothing is new.
+    await runMailSync(USER_ID, { trigger: "manual", deps: fakeDeps(inbox, at(120)).deps });
+    expect(await newMailAt()).toEqual(T0);
+
+    inbox.messages = [message("b"), message("a")];
+    await runMailSync(USER_ID, { trigger: "manual", deps: fakeDeps(inbox, at(240)).deps });
+    expect(await newMailAt()).toEqual(at(240));
+  });
+});
+
 describe("runMailSync: storing Notifications", () => {
   it("stores new messages with sender, subject, preview and the Outlook web link", async () => {
     const { deps } = fakeDeps({ messages: [message("a")] }, T0);

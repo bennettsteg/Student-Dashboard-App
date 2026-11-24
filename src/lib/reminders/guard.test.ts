@@ -37,6 +37,12 @@ describe("reminderDue", () => {
     expect(due({ lastSentLocalDate: "2026-10-25" })).toBe(true);
   });
 
+  it("waits 15 minutes after a failed attempt, then is due again", () => {
+    const failed = new Date("2026-10-26T12:00:00Z");
+    expect(due({ lastFailedAt: failed, now: new Date("2026-10-26T12:14:59Z") })).toBe(false);
+    expect(due({ lastFailedAt: failed, now: new Date("2026-10-26T12:15:00Z") })).toBe(true);
+  });
+
   it("is not due when nothing is due today", () => {
     expect(due({ dueTodayCount: 0 })).toBe(false);
   });

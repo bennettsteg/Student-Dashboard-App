@@ -14,7 +14,7 @@ Details: [tailnet-https.md](tailnet-https.md).
 
 | # | Check (what should happen) | Status | Result | Date |
 | --- | --- | --- | --- | --- |
-| 1.1 | **Migrations:** after `docker compose up -d --build`, `docker compose logs migrate` ends with "All migrations have been successfully applied." (database backed up first). | Not yet run | | |
+| 1.1 | **Migrations:** after `docker compose up -d --build`, `docker compose logs migrate` ends with "All migrations have been successfully applied.". | Not yet run | | |
 | 1.2 | **Worker:** `docker compose logs worker` shows `[worker] started`, a `mail tick` line and a `reminder tick` line, and exactly one worker container is running (`docker compose ps`). | Not yet run | | |
 | 1.3 | **Desktop, Tailscale on:** `https://<host>.<tailnet>.ts.net` loads the dashboard with a valid certificate (padlock, no warning). | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |
 | 1.4 | **Phone, Tailscale on:** the same URL loads in Safari with a valid certificate. | Pass | Ticked off by the student in the old tailnet-https.md checklist before it moved here (date not recorded) | |

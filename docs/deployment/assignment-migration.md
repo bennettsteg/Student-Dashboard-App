@@ -1,6 +1,6 @@
 # Assignment model migration
 
-Migration `prisma/migrations/20261026000000_assignment_model` replaces the old `CalendarEvent` table with a lean `Assignment` table (ADR-0001: Assignments are entered by hand, Blackboard sync is gone). It is **destructive**, so take a backup first.
+Migration `prisma/migrations/20261026000000_assignment_model` replaces the old `CalendarEvent` table with a lean `Assignment` table (ADR-0001: Assignments are entered by hand, Blackboard sync is gone). It is destructive, but the data it converts is re-enterable, so a backup is optional (the steps below remain if you want one).
 
 ## What it does to existing data
 
@@ -20,7 +20,7 @@ The migration is plain SQL and applies with `prisma migrate deploy` (no shadow d
 
 Postgres is not defined in this repo's `docker-compose.yml`: the stack joins the external `database-network` and reaches a Postgres container that runs separately (for example under Portainer). Below, `<postgres-container>` is that container's name (find it with `docker ps`) and `$POSTGRES_USER` / `$POSTGRES_DB` are its database credentials.
 
-### 1. Back up the database
+### 1. Back up the database (optional)
 
 ```bash
 docker exec -i <postgres-container> sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > studydesk-before-assignment-migration.dump
