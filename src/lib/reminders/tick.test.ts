@@ -15,10 +15,12 @@ const OTHER = `reminder-tick-other-${RUN}`;
 const ENDPOINT_A = `https://push.example/${RUN}/a`;
 const ENDPOINT_B = `https://push.example/${RUN}/b`;
 
-// 2026-10-26 is a Monday; New York is on EDT (UTC-4). The reminder time is 08:00 local.
+// 2026-10-26 is a Monday; New York is on EDT (UTC-4). The Morning Reminder time is 08:00 local
+// and the Last-chance Reminder time is 23:30 local, unless a test overrides them.
 const EIGHT_AM = new Date("2026-10-26T12:00:00Z");
 const SEVEN_AM = new Date("2026-10-26T11:00:00Z");
 const NOON = new Date("2026-10-26T16:00:00Z");
+const ELEVEN_THIRTY_PM = new Date("2026-10-27T03:30:00Z"); // 23:30 local Monday
 const NEXT_DAY_NINE_AM = new Date("2026-10-27T13:00:00Z");
 
 let courseId: string;
@@ -49,9 +51,14 @@ async function addDevice(endpoint: string) {
   await prisma.pushSubscription.create({ data: { userId: USER, endpoint, p256dh: "p", auth: "a" } });
 }
 
-async function lastSent() {
+async function lastMorningSent() {
   const state = await prisma.reminderState.findUnique({ where: { userId: USER } });
-  return state?.lastSentLocalDate ?? null;
+  return state?.morningSentLocalDate ?? null;
+}
+
+async function lastChanceSent() {
+  const state = await prisma.reminderState.findUnique({ where: { userId: USER } });
+  return state?.lastChanceSentLocalDate ?? null;
 }
 
 beforeAll(async () => {
@@ -74,7 +81,12 @@ beforeEach(async () => {
   await prisma.reminderState.deleteMany({ where: { userId: USER } });
   await prisma.user.update({
     where: { id: USER },
-    data: { timezone: "America/New_York", reminderTime: "08:00", remindersEnabled: true },
+    data: {
+      timezone: "America/New_York",
+      morningReminderTime: "08:00",
+      lastChanceReminderTime: "23:30",
+      remindersEnabled: true,
+    },
   });
   // Due at 11:59 PM local on the Monday: due today, still in the future at 08:00.
   await addAssignment("2026-10-27T03:59:00Z");
@@ -83,14 +95,15 @@ beforeEach(async () => {
 });
 
 describe("runReminderTick", () => {
-  it("sends one count-only digest per device at the reminder time and records the local date", async () => {
+  it("sends one count-only digest per device at the Morning Reminder time and records the local date", async () => {
     const { calls } = await tick(EIGHT_AM);
 
     expect(calls.map((c) => c.endpoint).sort()).toEqual([ENDPOINT_A, ENDPOINT_B]);
     for (const call of calls) {
       expect(call.body).toEqual({ title: "StudyDesk", body: "1 assignment due today", url: "/assignments" });
     }
-    expect(await lastSent()).toBe("2026-10-26");
+    expect(await lastMorningSent()).toBe("2026-10-26");
+    expect(await lastChanceSent()).toBeNull();
   });
 
   it("counts only the Assignments due today in the student's timezone, and never shows titles", async () => {
@@ -107,13 +120,13 @@ describe("runReminderTick", () => {
   it("sends nothing before the reminder time, then sends once it is reached", async () => {
     const early = await tick(SEVEN_AM);
     expect(early.calls).toHaveLength(0);
-    expect(await lastSent()).toBeNull();
+    expect(await lastMorningSent()).toBeNull();
 
     const onTime = await tick(EIGHT_AM);
     expect(onTime.calls).toHaveLength(2);
   });
 
-  it("never sends a second Reminder on the same local day, across ticks or a restart", async () => {
+  it("never sends a second Morning Reminder on the same local day, across ticks or a restart", async () => {
     await tick(EIGHT_AM);
 
     for (const now of [new Date(EIGHT_AM.getTime() + 5 * 60_000), NOON]) {
@@ -129,7 +142,7 @@ describe("runReminderTick", () => {
     const next = await tick(NEXT_DAY_NINE_AM);
 
     expect(next.calls).toHaveLength(2);
-    expect(await lastSent()).toBe("2026-10-27");
+    expect(await lastMorningSent()).toBe("2026-10-27");
   });
 
   it("sends nothing on a day with nothing due, and records nothing", async () => {
@@ -139,7 +152,7 @@ describe("runReminderTick", () => {
     const { calls } = await tick(EIGHT_AM);
 
     expect(calls).toHaveLength(0);
-    expect(await lastSent()).toBeNull();
+    expect(await lastMorningSent()).toBeNull();
   });
 
   it("sends nothing while reminders are disabled, and keeps the device registrations", async () => {
@@ -152,7 +165,10 @@ describe("runReminderTick", () => {
   });
 
   it("evaluates each user in their own timezone", async () => {
-    await prisma.user.update({ where: { id: USER }, data: { timezone: "UTC", reminderTime: "12:00" } });
+    await prisma.user.update({
+      where: { id: USER },
+      data: { timezone: "UTC", morningReminderTime: "12:00" },
+    });
     await addAssignment("2026-10-26T20:00:00Z"); // Monday in UTC too
     // At 11:59Z it is still before 12:00 UTC (the New York assignment, due 03:59Z Tuesday,
     // is not due Monday in UTC, so the count there is 1).
@@ -166,12 +182,12 @@ describe("runReminderTick", () => {
     await prisma.pushSubscription.deleteMany({ where: { userId: USER } });
     const none = await tick(EIGHT_AM);
     expect(none.calls).toHaveLength(0);
-    expect(await lastSent()).toBeNull();
+    expect(await lastMorningSent()).toBeNull();
 
     await addDevice(ENDPOINT_A);
     const later = await tick(NOON);
     expect(later.calls.map((c) => c.endpoint)).toEqual([ENDPOINT_A]);
-    expect(await lastSent()).toBe("2026-10-26");
+    expect(await lastMorningSent()).toBe("2026-10-26");
   });
 
   it("records the day and deletes the device when the push service says it is gone", async () => {
@@ -179,12 +195,12 @@ describe("runReminderTick", () => {
 
     expect(calls).toHaveLength(0);
     expect(await prisma.pushSubscription.count({ where: { userId: USER } })).toBe(0);
-    expect(await lastSent()).toBe("2026-10-26");
+    expect(await lastMorningSent()).toBe("2026-10-26");
   });
 
   it("records the day when every send fails, so a push outage is not retried every tick", async () => {
     await tick(EIGHT_AM, { [ENDPOINT_A]: 500, [ENDPOINT_B]: 503 });
-    expect(await lastSent()).toBe("2026-10-26");
+    expect(await lastMorningSent()).toBe("2026-10-26");
 
     const retry = await tick(NOON);
     expect(retry.calls).toHaveLength(0);
@@ -207,7 +223,7 @@ describe("runReminderTick", () => {
     });
 
     expect(result.errors).toBeGreaterThanOrEqual(1);
-    expect(await lastSent()).toBeNull();
+    expect(await lastMorningSent()).toBeNull();
   });
 
   it("ignores users who have reminders on but no Assignments or devices", async () => {
@@ -217,5 +233,72 @@ describe("runReminderTick", () => {
 
     expect(calls).toHaveLength(2); // only USER's devices
     expect(await prisma.reminderState.findUnique({ where: { userId: OTHER } })).toBeNull();
+  });
+
+  describe("the Last-chance Reminder", () => {
+    it("sends independently of the Morning Reminder, with a distinct body, and both can fire the same day", async () => {
+      const morning = await tick(EIGHT_AM);
+      expect(morning.calls).toHaveLength(2);
+
+      const lastChance = await tick(ELEVEN_THIRTY_PM);
+
+      expect(lastChance.calls).toHaveLength(2);
+      for (const call of lastChance.calls) {
+        expect(call.body).toEqual({
+          title: "StudyDesk",
+          body: "Last chance: 1 assignment due today",
+          url: "/assignments",
+        });
+      }
+      expect(await lastMorningSent()).toBe("2026-10-26");
+      expect(await lastChanceSent()).toBe("2026-10-26");
+    });
+
+    it("fires even when the Morning Reminder's own time hasn't been reached yet that day", async () => {
+      // No ordering is enforced between the two times (see CONTEXT.md): here the Morning
+      // Reminder is set later in the day than the Last-chance Reminder, so only the latter
+      // is due at 23:30.
+      await prisma.user.update({ where: { id: USER }, data: { morningReminderTime: "23:45" } });
+
+      const { calls } = await tick(ELEVEN_THIRTY_PM);
+
+      expect(calls).toHaveLength(2);
+      for (const call of calls) {
+        expect(call.body.body).toBe("Last chance: 1 assignment due today");
+      }
+      expect(await lastMorningSent()).toBeNull();
+      expect(await lastChanceSent()).toBe("2026-10-26");
+    });
+
+    it("re-checks what's due today at its own send time, and stays silent if nothing still is", async () => {
+      await tick(EIGHT_AM); // Morning Reminder fires for the one Assignment due today.
+      await prisma.assignment.deleteMany({ where: { userId: USER } }); // completed/removed since
+
+      const { calls } = await tick(ELEVEN_THIRTY_PM);
+
+      expect(calls).toHaveLength(0);
+      expect(await lastChanceSent()).toBeNull();
+    });
+
+    it("never sends a second Last-chance Reminder on the same local day", async () => {
+      await tick(ELEVEN_THIRTY_PM);
+
+      const again = await tick(new Date(ELEVEN_THIRTY_PM.getTime() + 5 * 60_000));
+
+      expect(again.calls).toHaveLength(0);
+    });
+
+    it("sends again the next local day when something is due then", async () => {
+      // Keep the Morning Reminder from also catching up at 23:30 on either day, so only the
+      // Last-chance Reminder's own behavior is under test here.
+      await prisma.user.update({ where: { id: USER }, data: { morningReminderTime: "23:59" } });
+      await tick(ELEVEN_THIRTY_PM);
+      await addAssignment("2026-10-28T03:30:00Z"); // 23:30 local Tuesday
+
+      const next = await tick(new Date("2026-10-28T03:30:00Z"));
+
+      expect(next.calls).toHaveLength(2);
+      expect(await lastChanceSent()).toBe("2026-10-27");
+    });
   });
 });

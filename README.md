@@ -50,11 +50,11 @@ All variables live in `.env`; `docker-compose.yml` passes them to the services t
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | app, worker | Web Push. Optional: without them the app works and Settings says push isn't set up. Subject is `mailto:you@example.com` or an https URL |
 | `AUTH_MICROSOFT_ENTRA_ID_ISSUER` | app | Leave unset (defaults to the `common` endpoint). Not in `.env.example` on purpose |
 
-The timezone, reminder time and Reminders switch are Settings in the app, stored in the database, not environment variables.
+The timezone, the two reminder times and the Reminders switch are Settings in the app, stored in the database, not environment variables.
 
 ### The worker: exactly one instance
 
-The `worker` service runs two ticks: an hourly automatic Mail Sync (at most one Microsoft Graph call per 24 hours) and a Reminder check every 5 minutes. **Run exactly one instance**; never `--scale worker=2` or start a second copy against the same database. Restarting it is safe. Details and log lines: [docs/deployment/worker.md](docs/deployment/worker.md).
+The `worker` service runs two ticks: an hourly automatic Mail Sync (at most one Microsoft Graph call per 24 hours) and a Reminders check every 5 minutes. **Run exactly one instance**; never `--scale worker=2` or start a second copy against the same database. Restarting it is safe. Details and log lines: [docs/deployment/worker.md](docs/deployment/worker.md).
 
 ### Updating and migrations
 

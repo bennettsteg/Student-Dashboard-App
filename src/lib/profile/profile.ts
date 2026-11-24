@@ -18,7 +18,8 @@ export async function getProfile(userId: string): Promise<Profile> {
       program: true,
       termLabel: true,
       timezone: true,
-      reminderTime: true,
+      morningReminderTime: true,
+      lastChanceReminderTime: true,
       remindersEnabled: true,
     },
   });

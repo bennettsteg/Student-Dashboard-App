@@ -62,7 +62,8 @@ export default async function SettingsPage() {
           program: profile.program,
           termLabel: profile.termLabel,
           timezone: profile.timezone,
-          reminderTime: profile.reminderTime,
+          morningReminderTime: profile.morningReminderTime,
+          lastChanceReminderTime: profile.lastChanceReminderTime,
           remindersEnabled: profile.remindersEnabled,
         }}
         email={account ? profile.email : null}

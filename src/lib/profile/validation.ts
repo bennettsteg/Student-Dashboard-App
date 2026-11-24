@@ -9,8 +9,10 @@ export interface ProfileInput {
   termLabel: string | null;
   /** IANA timezone name, e.g. "America/New_York". */
   timezone: string;
-  /** Reminder time of day in `timezone`, 24-hour "HH:mm". */
-  reminderTime: string;
+  /** Morning Reminder time of day in `timezone`, 24-hour "HH:mm". */
+  morningReminderTime: string;
+  /** Last-chance Reminder time of day in `timezone`, 24-hour "HH:mm". */
+  lastChanceReminderTime: string;
   remindersEnabled: boolean;
 }
 
@@ -70,8 +72,11 @@ export function parseProfileInput(input: ProfileInput): ProfileParseResult {
   if (!isValidTimeZone(timezone)) {
     return { ok: false, error: "Choose a valid timezone." };
   }
-  if (!isValidTimeOfDay(input.reminderTime)) {
-    return { ok: false, error: "Enter the reminder time as HH:mm (00:00-23:59)." };
+  if (!isValidTimeOfDay(input.morningReminderTime)) {
+    return { ok: false, error: "Enter the morning reminder time as HH:mm (00:00-23:59)." };
+  }
+  if (!isValidTimeOfDay(input.lastChanceReminderTime)) {
+    return { ok: false, error: "Enter the last-chance reminder time as HH:mm (00:00-23:59)." };
   }
 
   return {
@@ -79,7 +84,8 @@ export function parseProfileInput(input: ProfileInput): ProfileParseResult {
     value: {
       ...cleaned,
       timezone,
-      reminderTime: input.reminderTime,
+      morningReminderTime: input.morningReminderTime,
+      lastChanceReminderTime: input.lastChanceReminderTime,
       remindersEnabled: input.remindersEnabled,
     },
   };

@@ -17,8 +17,16 @@ The student is finished with it, so it is permanently deleted after a confirmati
 _Avoid_: Mark done, archive, dismiss
 
 **Reminder**:
-A push alert, sent from the student's own server, that Assignments are due today.
+A push alert, sent from the student's own server, that Assignments are due today. Sent up to twice a day: a Morning Reminder and a Last-chance Reminder.
 _Avoid_: Notification, alert
+
+**Morning Reminder**:
+The first daily Reminder, timed early in the day.
+_Avoid_: —
+
+**Last-chance Reminder**:
+The second daily Reminder, timed late in the day (23:30 by default) as a final nudge for Assignments still due today.
+_Avoid_: Evening reminder, night reminder, second reminder
 
 **Term**:
 A label for the current semester shown in page headers; it does not group or filter Courses.

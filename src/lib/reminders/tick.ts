@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/db";
 import { isDueToday } from "@/lib/assignments/status";
 import { localDate } from "@/lib/time";
-import { buildReminderPayload } from "@/lib/push/payload";
+import {
+  buildLastChanceReminderPayload,
+  buildMorningReminderPayload,
+  type PushPayload,
+} from "@/lib/push/payload";
 import { sendPushToUser, type SendOptions } from "@/lib/push/send";
 
 import { reminderDue } from "./guard";
@@ -29,14 +33,40 @@ export interface ReminderTickResult {
 // timezone, so this window always contains every instant of the user's "today".
 const DAY_WINDOW_MS = 30 * 60 * 60 * 1000;
 
+// The two Reminder kinds, each with its own time-of-day field, its own "already sent today"
+// bookkeeping field on `ReminderState`, and its own payload wording. Both share the one
+// `remindersEnabled` switch and are evaluated independently, so either can fire on its own
+// schedule and both can fire the same local day.
+const REMINDER_KINDS = [
+  {
+    name: "morning",
+    reminderTimeField: "morningReminderTime",
+    sentDateField: "morningSentLocalDate",
+    buildPayload: buildMorningReminderPayload,
+  },
+  {
+    name: "lastChance",
+    reminderTimeField: "lastChanceReminderTime",
+    sentDateField: "lastChanceSentLocalDate",
+    buildPayload: buildLastChanceReminderPayload,
+  },
+] as const satisfies {
+  name: string;
+  reminderTimeField: "morningReminderTime" | "lastChanceReminderTime";
+  sentDateField: "morningSentLocalDate" | "lastChanceSentLocalDate";
+  buildPayload: (dueTodayCount: number) => PushPayload;
+}[];
+
 /**
- * One tick of the daily Reminder, called by the worker every few minutes. For every user with
- * Reminders switched on it evaluates the Reminder guard from persisted state and the local
- * database only (no Graph or other external call apart from the push itself), and sends one
- * count-only digest per subscribed device to those that are due.
+ * One tick of the daily Reminders, called by the worker every few minutes. For every user with
+ * Reminders switched on it evaluates the Reminder guard, independently for the Morning Reminder
+ * and the Last-chance Reminder, from persisted state and the local database only (no Graph or
+ * other external call apart from the push itself), and sends one count-only digest per
+ * subscribed device to those that are due.
  *
- * Holds no state between calls, so a worker restart or repeated ticks cannot resend: the user's
- * local date is recorded in `ReminderState`. What gets recorded:
+ * Holds no state between calls, so a worker restart or repeated ticks cannot resend: each
+ * Reminder's local date is recorded in its own `ReminderState` field. What gets recorded, per
+ * Reminder:
  *  - at least one device was attempted (accepted, gone, or failed): record today. Accepted
  *    devices must not be sent to twice, and a push-service outage must not be hammered every
  *    few minutes, so a Reminder is attempted at most once per local day. A device that failed
@@ -54,46 +84,62 @@ export async function runReminderTick(
 
   const users = await prisma.user.findMany({
     where: { remindersEnabled: true },
-    select: { id: true, timezone: true, reminderTime: true, reminderState: true },
+    select: {
+      id: true,
+      timezone: true,
+      morningReminderTime: true,
+      lastChanceReminderTime: true,
+      reminderState: true,
+    },
   });
 
   const result: ReminderTickResult = { checked: users.length, due: 0, delivered: 0, errors: 0 };
   for (const user of users) {
     try {
-      const guard = {
-        remindersEnabled: true,
-        reminderTime: user.reminderTime,
-        timeZone: user.timezone,
-        lastSentLocalDate: user.reminderState?.lastSentLocalDate ?? null,
-        now,
+      // Computed at most once per user per tick, and only if some Reminder could actually be
+      // due, even though both kinds may need it.
+      let dueTodayCount: number | null = null;
+      const getDueTodayCount = async () => {
+        dueTodayCount ??= await countDueToday(user.id, now, user.timezone);
+        return dueTodayCount;
       };
-      // Cheap checks first, so the database is only asked for Assignments when a Reminder
-      // could actually be due.
-      if (!reminderDue({ ...guard, dueTodayCount: 1 })) continue;
 
-      const dueTodayCount = await countDueToday(user.id, now, user.timezone);
-      if (!reminderDue({ ...guard, dueTodayCount })) continue;
+      for (const kind of REMINDER_KINDS) {
+        const guard = {
+          remindersEnabled: true,
+          reminderTime: user[kind.reminderTimeField],
+          timeZone: user.timezone,
+          lastSentLocalDate: user.reminderState?.[kind.sentDateField] ?? null,
+          now,
+        };
+        // Cheap checks first, so the database is only asked for Assignments when a Reminder
+        // could actually be due.
+        if (!reminderDue({ ...guard, dueTodayCount: 1 })) continue;
 
-      result.due++;
-      const sent = await sendPushToUser(user.id, buildReminderPayload(dueTodayCount), {
-        sender: deps.sender,
-        env: deps.env,
-      });
+        const count = await getDueTodayCount();
+        if (!reminderDue({ ...guard, dueTodayCount: count })) continue;
 
-      if (sent.error) {
-        result.errors++;
-        console.error(`[worker] reminder for user ${user.id} not sent: ${sent.error}`);
-        continue;
+        result.due++;
+        const sent = await sendPushToUser(user.id, kind.buildPayload(count), {
+          sender: deps.sender,
+          env: deps.env,
+        });
+
+        if (sent.error) {
+          result.errors++;
+          console.error(`[worker] ${kind.name} reminder for user ${user.id} not sent: ${sent.error}`);
+          continue;
+        }
+        if (sent.sent + sent.removed + sent.failed === 0) continue; // no device registered
+
+        const today = localDate(now, user.timezone);
+        await prisma.reminderState.upsert({
+          where: { userId: user.id },
+          create: { userId: user.id, [kind.sentDateField]: today },
+          update: { [kind.sentDateField]: today },
+        });
+        if (sent.sent > 0) result.delivered++;
       }
-      if (sent.sent + sent.removed + sent.failed === 0) continue; // no device registered
-
-      const today = localDate(now, user.timezone);
-      await prisma.reminderState.upsert({
-        where: { userId: user.id },
-        create: { userId: user.id, lastSentLocalDate: today },
-        update: { lastSentLocalDate: today },
-      });
-      if (sent.sent > 0) result.delivered++;
     } catch (e) {
       // One user's bad data (say, an unknown timezone) must not stop the others.
       result.errors++;

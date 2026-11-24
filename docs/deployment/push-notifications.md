@@ -1,6 +1,6 @@
 # Push notifications (Reminders)
 
-StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. This covers the delivery plumbing and the Settings test push; when the daily Reminder is sent is described in [worker.md](worker.md).
+StudyDesk sends Reminders with Web Push, from your own server, to the devices you enable in Settings. This page covers the one-time server setup and enabling a device. This covers the delivery plumbing and the Settings test push; when the daily Reminders (a Morning Reminder and a Last-chance Reminder) are sent is described in [worker.md](worker.md).
 
 Push needs the HTTPS tailnet address from [tailnet-https.md](tailnet-https.md) and, on iPhone, the installed app from [install-pwa.md](install-pwa.md).
 
@@ -62,8 +62,8 @@ When a push service answers 404 or 410 (the device uninstalled the app, revoked 
 
 ## Sending from code
 
-The worker's daily digest (and the Settings test push) use `sendPushToUser(userId, payload, options?)` in `src/lib/push/send.ts`. It pushes to every device the user enabled, deletes the ones the push service reports gone, never throws for a delivery problem, and returns `{ sent, removed, failed, error? }`. Build the payload with `buildReminderPayload(count)` from `src/lib/push/payload.ts`: generic and count-only, so no assignment titles pass through Apple's relay, and tapping opens `/assignments`.
+The worker's daily Reminders (and the Settings test push) use `sendPushToUser(userId, payload, options?)` in `src/lib/push/send.ts`. It pushes to every device the user enabled, deletes the ones the push service reports gone, never throws for a delivery problem, and returns `{ sent, removed, failed, error? }`. Build the payload with `buildMorningReminderPayload(count)` or `buildLastChanceReminderPayload(count)` from `src/lib/push/payload.ts`: generic and count-only, so no assignment titles pass through Apple's relay, and tapping opens `/assignments`.
 
 ## Manual verification checklist
 
-Real push delivery needs real devices and can't be automated. The list (keys, enabling the iPhone and desktop, the test push, the blocked and Safari-tab messages, receiving a real daily Reminder, Brave, stale device cleanup) is section 3 of [manual-verification.md](manual-verification.md), where results are recorded.
+Real push delivery needs real devices and can't be automated. The list (keys, enabling the iPhone and desktop, the test push, the blocked and Safari-tab messages, receiving a real Morning and Last-chance Reminder, Brave, stale device cleanup) is section 3 of [manual-verification.md](manual-verification.md), where results are recorded.

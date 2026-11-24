@@ -23,7 +23,8 @@ const toForm = (p: ProfileInput) => ({
   program: p.program ?? "",
   termLabel: p.termLabel ?? "",
   timezone: p.timezone,
-  reminderTime: p.reminderTime,
+  morningReminderTime: p.morningReminderTime,
+  lastChanceReminderTime: p.lastChanceReminderTime,
   remindersEnabled: p.remindersEnabled,
 });
 
@@ -176,16 +177,28 @@ export function ProfileForm({ initial, email, timeZones }: ProfileFormProps) {
               }
               className="size-5"
             />
-            Remind me each morning when Assignments are due today
+            Remind me when Assignments are due today
           </label>
           <div className="space-y-2">
-            <Label htmlFor="reminder-time-hours" className="font-semibold">
-              Reminder time ({values.timezone})
+            <Label htmlFor="morning-reminder-time" className="font-semibold">
+              Morning reminder time ({values.timezone})
             </Label>
             <TimeInput
-              id="reminder-time"
-              value={values.reminderTime}
-              onChange={(reminderTime) => setValues({ ...values, reminderTime })}
+              id="morning-reminder-time"
+              value={values.morningReminderTime}
+              onChange={(morningReminderTime) => setValues({ ...values, morningReminderTime })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="last-chance-reminder-time" className="font-semibold">
+              Last-chance reminder time ({values.timezone})
+            </Label>
+            <TimeInput
+              id="last-chance-reminder-time"
+              value={values.lastChanceReminderTime}
+              onChange={(lastChanceReminderTime) =>
+                setValues({ ...values, lastChanceReminderTime })
+              }
             />
           </div>
         </div>

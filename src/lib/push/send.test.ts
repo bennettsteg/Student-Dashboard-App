@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/db";
 
-import { buildReminderPayload } from "./payload";
+import { buildMorningReminderPayload as buildReminderPayload } from "./payload";
 import { sendPushToUser, type PushSender } from "./send";
 import { listSubscriptions, registerSubscription } from "./subscriptions";
 

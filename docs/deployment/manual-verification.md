@@ -48,10 +48,11 @@ Details: [push-notifications.md](push-notifications.md) and [worker.md](worker.m
 | 3.3 | **iPhone:** Send test push. The notification arrives (with the app in the background or closed) and tapping it opens Assignments. | Not yet run | | |
 | 3.4 | **iPhone, Safari tab (not installed):** Settings explains that the installed app is required. | Not yet run | | |
 | 3.5 | **iPhone:** deny the permission once (or switch it off in iOS Settings); Settings shows the blocked message with the fix. | Not yet run | | |
-| 3.6 | **Receive a real Reminder (iPhone):** turn the Reminders switch on in Settings, set the reminder time a few minutes ahead, add an Assignment due today. Within about 5 minutes after that time the phone receives "1 assignment due today" (a count, no title) and tapping it opens Assignments. No second Reminder arrives the same day. | Not yet run | | |
-| 3.7 | **Desktop Edge:** enable and send a test push; tapping it opens Assignments in the app window. | Not yet run | | |
-| 3.8 | **Desktop Brave:** enabling fails with the Google services message until "Use Google services for push messaging" is on; it works afterwards (optional, only if you want Reminders in Brave). | Not yet run | | |
-| 3.9 | **Stale device cleanup:** uninstall the app from the phone (or revoke its notification permission), then wait for the next daily Reminder from the remaining device (Send test push targets only the current device). The dead device disappears from the "devices enabled" count. | Not yet run | | |
+| 3.6 | **Receive a real Morning Reminder (iPhone):** turn the Reminders switch on in Settings, set the morning reminder time a few minutes ahead, add an Assignment due today. Within about 5 minutes after that time the phone receives "1 assignment due today" (a count, no title) and tapping it opens Assignments. No second Morning Reminder arrives the same day. | Not yet run | | |
+| 3.7 | **Receive a real Last-chance Reminder (iPhone), same day as 3.6:** set the last-chance reminder time a few minutes ahead (the Assignment from 3.6 is still due today). Within about 5 minutes the phone receives "Last chance: 1 assignment due today", distinct wording from the Morning Reminder, and tapping it opens Assignments. No second Last-chance Reminder arrives the same day. | Not yet run | | |
+| 3.8 | **Desktop Edge:** enable and send a test push; tapping it opens Assignments in the app window. | Not yet run | | |
+| 3.9 | **Desktop Brave:** enabling fails with the Google services message until "Use Google services for push messaging" is on; it works afterwards (optional, only if you want Reminders in Brave). | Not yet run | | |
+| 3.10 | **Stale device cleanup:** uninstall the app from the phone (or revoke its notification permission), then wait for the next daily Reminder from the remaining device (Send test push targets only the current device). The dead device disappears from the "devices enabled" count. | Not yet run | | |
 
 ## 4. Review items
 

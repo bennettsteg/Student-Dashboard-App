@@ -16,7 +16,8 @@ const input: ProfileInput = {
   program: "Computer Science",
   termLabel: "Fall 2026",
   timezone: "America/Chicago",
-  reminderTime: "07:30",
+  morningReminderTime: "07:30",
+  lastChanceReminderTime: "22:45",
   remindersEnabled: true,
 };
 
@@ -30,14 +31,15 @@ afterAll(async () => {
 });
 
 describe("profile", () => {
-  it("starts with reminders off, 08:00 and UTC, and the connected account's email", async () => {
+  it("starts with reminders off, 08:00/23:30 and UTC, and the connected account's email", async () => {
     expect(await getProfile(USER_ID)).toEqual({
       name: null,
       email: EMAIL,
       program: null,
       termLabel: null,
       timezone: "UTC",
-      reminderTime: "08:00",
+      morningReminderTime: "08:00",
+      lastChanceReminderTime: "23:30",
       remindersEnabled: false,
     });
   });
@@ -56,7 +58,8 @@ describe("profile", () => {
 
     expect(await getProfile(USER_ID)).toMatchObject({
       remindersEnabled: false,
-      reminderTime: "07:30",
+      morningReminderTime: "07:30",
+      lastChanceReminderTime: "22:45",
       timezone: "America/Chicago",
     });
   });

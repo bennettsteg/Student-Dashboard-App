@@ -36,7 +36,8 @@ const valid = {
   program: "Computer Science",
   termLabel: "Fall 2026",
   timezone: "America/Chicago",
-  reminderTime: "07:30",
+  morningReminderTime: "07:30",
+  lastChanceReminderTime: "23:30",
   remindersEnabled: true,
 };
 
@@ -65,10 +66,22 @@ describe("parseProfileInput", () => {
     expect(result).toEqual({ ok: false, error: "Choose a valid timezone." });
   });
 
-  it("rejects a malformed reminder time", () => {
-    const result = parseProfileInput({ ...valid, reminderTime: "25:00" });
+  it("rejects a malformed morning reminder time", () => {
+    const result = parseProfileInput({ ...valid, morningReminderTime: "25:00" });
 
-    expect(result).toEqual({ ok: false, error: "Enter the reminder time as HH:mm (00:00-23:59)." });
+    expect(result).toEqual({
+      ok: false,
+      error: "Enter the morning reminder time as HH:mm (00:00-23:59).",
+    });
+  });
+
+  it("rejects a malformed last-chance reminder time", () => {
+    const result = parseProfileInput({ ...valid, lastChanceReminderTime: "25:00" });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Enter the last-chance reminder time as HH:mm (00:00-23:59).",
+    });
   });
 
   it("rejects over-long text instead of storing it", () => {

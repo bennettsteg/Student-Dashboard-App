@@ -26,12 +26,15 @@ model User {
   program          String?
   // Free-text Term label shown in page headers and the Dashboard greeting; not an entity.
   termLabel        String?
-  // IANA timezone name. Anchors "due today" and the Reminder time of day, wherever the server runs.
-  timezone         String  @default("UTC")
-  // Local wall-clock time of day (in `timezone`) for the daily Reminder, "HH:mm".
-  reminderTime     String  @default("08:00")
-  // Overall Reminder switch; per-device push subscriptions are separate and survive turning it off.
-  remindersEnabled Boolean @default(false)
+  // IANA timezone name. Anchors "due today" and both Reminder times of day, wherever the server runs.
+  timezone               String  @default("UTC")
+  // Local wall-clock time of day (in `timezone`) for the Morning Reminder, "HH:mm".
+  morningReminderTime    String  @default("08:00")
+  // Local wall-clock time of day (in `timezone`) for the Last-chance Reminder, "HH:mm".
+  lastChanceReminderTime String  @default("23:30")
+  // Overall Reminder switch (both kinds); per-device push subscriptions are separate and
+  // survive turning it off.
+  remindersEnabled       Boolean @default(false)
 
   accounts          Account[]
   sessions          Session[]
@@ -233,12 +236,14 @@ model PushSubscription {
 }
 
 // Per-user Reminder bookkeeping, written by the worker's reminder tick. Persisted (not kept in
-// memory) so a worker restart can never send a second Reminder in one local day.
+// memory) so a worker restart can never send a second Reminder of either kind in one local day.
 model ReminderState {
-  userId            String @id
+  userId String @id
   // The user's local calendar date (YYYY-MM-DD, in their timezone at send time) that the last
-  // Reminder digest was sent for. The guard compares it with today's local date.
-  lastSentLocalDate String
+  // Morning Reminder was sent for, or null if never. The guard compares it with today's local date.
+  morningSentLocalDate String?
+  // Same, for the Last-chance Reminder.
+  lastChanceSentLocalDate String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
